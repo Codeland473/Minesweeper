@@ -99,6 +99,8 @@ public class Panel {
 			 && y > -1 && y < states[0].length
 			 && states[x][y] == STATE_UNPRESSED) {
 				states[x][y] = STATE_PRESSED;
+				if (field[x][y] == 0)
+					bucketEmpty(x, y, field, states);
 			}
 		}
 		else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED) {
@@ -110,6 +112,22 @@ public class Panel {
 				switch (states[x][y]) {
 					case STATE_UNPRESSED: states[x][y] = STATE_FLAGGED;   break;
 					case STATE_FLAGGED:   states[x][y] = STATE_UNPRESSED; break;
+				}
+			}
+		}
+	}
+
+	private static void bucketEmpty(int x, int y, int[][] field, int[][] states) {
+		for (int k = -1; k < 2; ++k) {
+			for (int k2 = -1; k2 < 2; ++k2) {
+				int nx = x + k;
+				int ny = y + k2;
+				if (nx > -1 && nx < states.length
+				 && ny > -1 && ny < states[0].length
+				 && states[nx][ny] == STATE_UNPRESSED) {
+					states[nx][ny] = STATE_PRESSED;
+					if (field[nx][ny] == 0)
+						bucketEmpty(nx, ny, field, states);
 				}
 			}
 		}
