@@ -58,6 +58,10 @@ public class Panel {
 	private float pressX;
 	private float pressY;
 
+	// ebet offsets for centering
+	private int left_offset;
+	private int   up_offset;
+
 	public Panel(Window window, Camera camera) {
 		this.window = window;
 		this.camera = camera;
@@ -88,24 +92,36 @@ public class Panel {
 		}
 	}
 
-	public void update() {
-		if (window.wasResized()) {
+	public void update()
+	{
+		if (window.wasResized())
+		{
 			camera.setDims(window.getWidth(), window.getHeight());
-			minDim = Math.min(
+
+			minDim = Math.min
+			(
 				camera.getWidth()  / field.length,
 				camera.getHeight() / field[0].length
 			);
+
 			unpressed.setDims(minDim, minDim);
-			flagged.setDims(minDim, minDim);
+			  flagged.setDims(minDim, minDim);
 			depressed.setDims(minDim, minDim);
+
 			for (int i = 0; i < nums.length; ++i)
 				nums[i].setDims(minDim, minDim);
+
 			nums[9].setDims(minDim, minDim);
 		}
+
+		//determine ebet offset
+		left_offset = (int)((window. getWidth() - (   states.length * unpressed. getWidth())) / 2);
+		  up_offset = (int)((window.getHeight() - (states[0].length * unpressed.getHeight())) / 2);
+
 		if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_PRESSED) {
 			Vector3f coords = window.getMouseCoords(camera);
-			int x = (int) (coords.x / minDim);
-			int y = (int) (coords.y / minDim);
+			int x = (int) ((coords.x - left_offset) / minDim);
+			int y = (int) ((coords.y -   up_offset) / minDim);
 			if (x > -1 && x < states.length
 			 && y > -1 && y < states[0].length) {
 				switch (states[x][y]) {
@@ -133,8 +149,8 @@ public class Panel {
 		}
 		else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED) {
 			Vector3f coords = window.getMouseCoords(camera);
-			int x = (int) (coords.x / minDim);
-			int y = (int) (coords.y / minDim);
+			int x = (int) ((coords.x - left_offset) / minDim);
+			int y = (int) ((coords.y -   up_offset) / minDim);
 			if (x > -1 && x < states.length
 			 && y > -1 && y < states[0].length
 			 && pressX == x && pressY == y) {
@@ -171,8 +187,8 @@ public class Panel {
 		}
 		else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED) {
 			Vector3f coords = window.getMouseCoords(camera);
-			int x = (int) (coords.x / minDim);
-			int y = (int) (coords.y / minDim);
+			int x = (int) ((coords.x - left_offset) / minDim);
+			int y = (int) ((coords.y -   up_offset) / minDim);
 			if (x > -1 && x < states.length
 			 && y > -1 && y < states[0].length) {
 				switch (states[x][y]) {
@@ -206,22 +222,35 @@ public class Panel {
 		}
 	}
 
-	public void render() {
-		for (int i = 0; i < states.length; ++i) {
-			for (int j = 0; j < states[0].length; ++j) {
+	public void render()
+	{
+		var width = states.length;
+		var height = states[0].length;
+
+		for (int i = 0; i < width; ++i) {
+			for (int j = 0; j < height; ++j) {
 				switch (states[i][j]) {
-					case STATE_UNPRESSED: renderTile(i, j, unpressed        ); break;
-					case STATE_FLAGGED:   renderTile(i, j, flagged          ); break;
-					case STATE_DEPRESSED: renderTile(i, j, depressed        ); break;
-					case STATE_PRESSED:   renderTile(i, j, nums[field[i][j]]); break;
+					case STATE_UNPRESSED: renderTile(left_offset, up_offset, i, j, unpressed        ); break;
+					case STATE_FLAGGED:   renderTile(left_offset, up_offset, i, j, flagged          ); break;
+					case STATE_DEPRESSED: renderTile(left_offset, up_offset, i, j, depressed        ); break;
+					case STATE_PRESSED:   renderTile(left_offset, up_offset, i, j, nums[field[i][j]]); break;
 				}
 			}
 		}
 	}
 
-	private static void renderTile(int x, int y, TexRect rect) {
+	/**
+	 * renders a tile on the board
+	 * called in the render method for each tile
+	 *
+	 * will center the board with a left and up offset
+	 *
+	 * each tile is offset in the board with x and y
+	 */
+	private static void renderTile(int left, int up, int x, int y, TexRect rect)
+	{
 		float dims = rect.getWidth();
-		rect.setPosition(x * dims, y * dims);
+		rect.setPosition(x * dims + left, y * dims + up);
 		rect.render();
 	}
 }
