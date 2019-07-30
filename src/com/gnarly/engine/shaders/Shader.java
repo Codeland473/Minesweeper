@@ -53,8 +53,8 @@ import org.joml.Matrix4f;
 
 public abstract class Shader {
 
-	public static Shader2c  SHADER2C;
-	public static Shader2t  SHADER2T;
+	public static Shader2c SHADER2C;
+	public static Shader2t SHADER2T;
 	
 	protected int program;
 	
