@@ -32,7 +32,28 @@ public class FieldLoader {
 		int[][] ret = new int[16][16];
 		for (int i = 0; i < ret.length; ++i)
 			for (int j = 0; j < ret[0].length; ++j)
-				ret[i][j] = (int) (Math.random() * 8);
-		return ret;
+				if (Math.random() > 0.95)
+					ret[i][j] = 9;
+		return calculateNeighbors(ret);
+	}
+
+	public static int[][] calculateNeighbors(int[][] field) {
+		for (int i = 0; i < field.length; ++i) {
+			for (int j = 0; j < field[0].length; ++j) {
+				if (field[i][j] == 9) {
+					for (int k = -1; k < 2; ++k) {
+						for (int k2 = -1; k2 < 2; ++k2) {
+							int x = i + k;
+							int y = j + k2;
+							if (x > -1 && x < field.length
+							 && y > -1 && y < field[0].length
+							 && field[x][y] != 9)
+								++field[x][y];
+						}
+					}
+				}
+			}
+		}
+		return field;
 	}
 }

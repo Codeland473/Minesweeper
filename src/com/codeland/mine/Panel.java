@@ -72,9 +72,10 @@ public class Panel {
 			unpressed = new TexRect(camera, "res/img/tiles/unpressed.png", 0, 0, 0, minDim, minDim, 0, false);
 			flagged   = new TexRect(camera, "res/img/tiles/flagged.png", 0, 0, 0, minDim, minDim, 0, false);
 
-			nums = new TexRect[8];
-			for (int i = 0; i < nums.length; ++i)
+			nums = new TexRect[10];
+			for (int i = 0; i < nums.length - 1; ++i)
 				nums[i] = new TexRect(camera, "res/img/tiles/num-" + i + ".png", 0, 0, 0, minDim, minDim, 0, false);
+			nums[9] = new TexRect(camera, "res/img/tiles/mine.png", 0, 0, 0, minDim, minDim, 0, false);
 		}
 	}
 
