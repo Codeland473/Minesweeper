@@ -60,7 +60,7 @@ public class Panel {
 		field = FieldLoader.loadField();
 		states = new int[field.length][field[0].length];
 		for (int i = 0; i < states.length; ++i)
-			for (int j = 0; j < states.length; ++j)
+			for (int j = 0; j < states[0].length; ++j)
 				states[i][j] = STATE_UNPRESSED;
 
 		if (unpressed == null) {

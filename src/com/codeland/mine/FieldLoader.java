@@ -29,7 +29,7 @@ package com.codeland.mine;
 public class FieldLoader {
 
 	public static int[][] loadField() {
-		int[][] ret = new int[16][16];
+		int[][] ret = new int[30][16];
 		for (int i = 0; i < ret.length; ++i)
 			for (int j = 0; j < ret[0].length; ++j)
 				if (Math.random() > 0.95)
