@@ -1,0 +1,21 @@
+#version 330 core
+
+uniform sampler2D sampler;
+
+uniform vec4  iColor = vec4(1, 1, 1, 1);
+uniform float alpha  = 1;
+uniform float amount = 1;
+
+in vec2 texCoords;
+
+out vec4 color;
+
+void main() {
+	vec4 texColor = texture(sampler, texCoords);
+	if(texColor.a == 0)
+		discard;
+	else {
+		color = mix(iColor, texColor, amount);
+		color.a = color.a * alpha;
+	}
+}
