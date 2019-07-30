@@ -57,6 +57,9 @@ public class Panel {
 	private float pressX;
 	private float pressY;
 
+	private int leftOffset;
+	private int upOffset;
+
 	public Panel(Window window, Camera camera) {
 		this.window = window;
 		this.camera = camera;
@@ -87,16 +90,23 @@ public class Panel {
 	public void update() {
 		if (window.wasResized()) {
 			camera.setDims(window.getWidth(), window.getHeight());
+
 			minDim = Math.min(
 				camera.getWidth()  / board.width(),
 				camera.getHeight() / board.height()
 			);
+
 			unpressed.setDims(minDim, minDim);
-			flagged.setDims(minDim, minDim);
+			  flagged.setDims(minDim, minDim);
 			depressed.setDims(minDim, minDim);
+
 			for (int i = 0; i < nums.length; ++i)
 				nums[i].setDims(minDim, minDim);
 		}
+
+		leftOffset = (int) ((window.getWidth()  - (board.width()  * minDim)) / 2);
+		upOffset   = (int) ((window.getHeight() - (board.height() * minDim)) / 2);
+
 		if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
 			checkBoardPress(board::depress);
 		else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED)
@@ -109,11 +119,11 @@ public class Panel {
 		for (int i = 0; i < board.width(); ++i) {
 			for (int j = 0; j < board.height(); ++j) {
 				switch (board.getState(i, j)) {
-					case STATE_UNPRESSED: renderTile(i, j, unpressed                 ); break;
-					case STATE_FLAGGED:   renderTile(i, j, flagged                   ); break;
-					case STATE_DEPRESSED: renderTile(i, j, depressed                 ); break;
-					case STATE_DEAD:
-					case STATE_PRESSED:   renderTile(i, j, nums[board.getMines(i, j)]); break;
+					case STATE_UNPRESSED: renderTile(leftOffset, upOffset, i, j, unpressed                 ); break;
+					case STATE_FLAGGED:   renderTile(leftOffset, upOffset, i, j, flagged                   ); break;
+					case STATE_DEPRESSED: renderTile(leftOffset, upOffset, i, j, depressed                 ); break;
+					case STATE_DEAD:      renderTile(leftOffset, upOffset, i, j, dead                      ); break;
+					case STATE_PRESSED:   renderTile(leftOffset, upOffset, i, j, nums[board.getMines(i, j)]); break;
 				}
 			}
 		}
@@ -121,16 +131,16 @@ public class Panel {
 
 	private void checkBoardPress(BoardPressAction action) {
 		Vector3f coords = window.getMouseCoords(camera);
-		int x = (int) (coords.x / minDim);
-		int y = (int) (coords.y / minDim);
+		int x = (int) ((coords.x - leftOffset) / minDim);
+		int y = (int) ((coords.y -   upOffset) / minDim);
 		if (x > -1 && x < board.width()
 		 && y > -1 && y < board.height())
 			action.execute(x, y);
 	}
 
-	private static void renderTile(int x, int y, TexRect rect) {
+	private static void renderTile(int left, int up, int x, int y, TexRect rect) {
 		float dims = rect.getWidth();
-		rect.setPosition(x * dims, y * dims);
+		rect.setPosition(x * dims + left, y * dims + up);
 		rect.render();
 	}
 }
