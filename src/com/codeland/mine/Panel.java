@@ -110,8 +110,8 @@ public class Panel {
 		}
 
 		// Calculate the render offsets from the top and bottom of the window
-		leftOffset = window.getWidth()  - (board.width()  * tileDim) / 2;
-		upOffset   = window.getHeight() - (board.height() * tileDim) / 2;
+		leftOffset = (window.getWidth()  - (board.width()  * tileDim)) / 2;
+		upOffset   = (window.getHeight() - (board.height() * tileDim)) / 2;
 
 		// If the left mouse button is pressed...
 		if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)

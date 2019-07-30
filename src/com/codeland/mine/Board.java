@@ -322,10 +322,10 @@ public class Board {
 	 * @return Returns an array of booleans which represents the mine layout
 	 */
 	private static boolean[][] loadMines() {
-		boolean[][] ret = new boolean[16][16];
+		boolean[][] ret = new boolean[30][16];
 		for (int i = 0; i < ret.length; ++i)
 			for (int j = 0; j < ret[0].length; ++j)
-				if (Math.random() > 0.93)
+				if (Math.random() > 0.65)
 					ret[i][j] = true;
 		return ret;
 	}
