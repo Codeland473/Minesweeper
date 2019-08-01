@@ -376,11 +376,13 @@ public class Board {
 	 * @return Returns an array of booleans which represents the mine layout
 	 */
 	private static boolean[][] loadMines() {
-		boolean[][] ret = new boolean[30][30];
-		for (int i = 0; i < ret.length; ++i)
-			for (int j = 0; j < ret[0].length; ++j)
-				if (Math.random() > 0.98)
-					ret[i][j] = true;
+		int[][] board = FieldLoader.loadField(30, 16, 50, 0, 15);
+		boolean[][] ret = new boolean[30][16];
+		for (int i = 0; i < ret.length; ++i) {
+			for (int j = 0; j < ret[0].length; ++j) {
+				ret[i][j] = board[i][j] == 9;
+			}
+		}
 		return ret;
 	}
 }
