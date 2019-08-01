@@ -123,7 +123,7 @@ public class Board {
 		// If the tile had no adjacent mines and wasn't
 		// a mine itself press all of it's neighbors as well
 		if (board[x][y].mines == 0)
-			neighbors(x, y, this::bucketClear);
+			bucketClear(x, y, board);
 		if (board[x][y].mines == MINE) {
 			status = STATUS_LOSE;
 			iterate((nx, ny, board) -> board[nx][ny].state = STATE_PRESSED);
@@ -318,7 +318,7 @@ public class Board {
 				if (leBoard[nx][ny].state == STATE_UNPRESSED) {
 					leBoard[nx][ny].state = STATE_PRESSED;
 					if (leBoard[nx][ny].mines == 0
-							&& (leBoard[nx][ny].state & BUCKET_FLAG) == 0) {
+					&& (leBoard[nx][ny].state & BUCKET_FLAG) == 0) {
 						leBoard[nx][ny].state ^= BUCKET_FLAG;
 						stack.push(nx * height() + ny);
 					}
