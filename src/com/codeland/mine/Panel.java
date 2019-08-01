@@ -47,6 +47,7 @@ public class Panel {
 	private static TexRect depressed = null;
 	private static TexRect dead      = null;
 	private static TexRect win       = null;
+	private static TexRect[] backs   = null;
 	private static TexRect[] nums    = null;
 
 	private Window window;
@@ -88,6 +89,11 @@ public class Panel {
 			dead      = new TexRect(camera, "res/img/tiles/mine-dead.png", 0, 0, 0, tileDim, tileDim, 0, false);
 			win       = new TexRect(camera, "res/img/tiles/mine-win.png",  0, 0, 0, tileDim, tileDim, 0, false);
 
+			backs = new TexRect[3];
+			backs[0] = new TexRect(camera, "res/img/tiles/num-background-plain.png",  0, 0, -0.1f, tileDim, tileDim, 0, false);
+			backs[1] = new TexRect(camera, "res/img/tiles/num-background-equal.png",  0, 0, -0.1f, tileDim, tileDim, 0, false);
+			backs[2] = new TexRect(camera, "res/img/tiles/num-background-exceed.png", 0, 0, -0.1f, tileDim, tileDim, 0, false);
+
 			nums = new TexRect[10];
 			for (int i = 0; i < nums.length - 1; ++i)
 				nums[i] = new TexRect(camera, "res/img/tiles/num-" + i + ".png", 0, 0, 0, tileDim, tileDim, 0, false);
@@ -127,6 +133,9 @@ public class Panel {
 			depressed.setDims(tileDim, tileDim);
 			     dead.setDims(tileDim, tileDim);
 			      win.setDims(tileDim, tileDim);
+
+			for (int i = 0; i < backs.length; ++i)
+				backs[i].setDims(tileDim, tileDim);
 
 			for (int i = 0; i < nums.length; ++i)
 				nums[i].setDims(tileDim, tileDim);
@@ -195,7 +204,15 @@ public class Panel {
 				case STATE_DEPRESSED: renderTile(xPos, yPos, depressed              ); break;
 				case STATE_DEAD:      renderTile(xPos, yPos, dead                   ); break;
 				case STATE_WIN:       renderTile(xPos, yPos, win                    ); break;
-				case STATE_PRESSED:   renderTile(xPos, yPos, nums[board[x][y].mines]); break;
+				case STATE_PRESSED:
+					int index = board[x][y].mines;
+					if (index == MINE || index == 0)
+						renderTile(xPos, yPos, nums[index]);
+					else {
+						renderTile(xPos, yPos, backs[this.board.flagCount(x, y)]);
+						renderTile(xPos, yPos, nums[index]);
+					}
+					break;
 			}
 		});
 	}

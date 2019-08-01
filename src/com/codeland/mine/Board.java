@@ -26,6 +26,8 @@
 
 package com.codeland.mine;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Board {
 
 	public interface Action {
@@ -69,7 +71,7 @@ public class Board {
 		STATUS_WIN     = 0x01,
 		STATUS_LOSE    = 0x02;
 
-	private static final int MINE = 0x09; // The ID of a mine
+	public static final int MINE = 0x09; // The ID of a mine
 
 	private static final int BUCKET_FLAG = 0x01 << 16;
 
@@ -333,6 +335,24 @@ public class Board {
 
 	public boolean depressed() {
 		return pressX != -1 && pressY != -1;
+	}
+
+	private static class Int {
+		public int num;
+	}
+
+	public int flagCount(int x, int y) {
+		Int count = new Int();
+		neighbors(x, y, (nx, ny, board) -> {
+			if (board[nx][ny].state == STATE_FLAGGED)
+				++count.num;
+		});
+		if (count.num > board[x][y].mines)
+			return 2;
+		else if (count.num == board[x][y].mines)
+			return 1;
+		else
+			return 0;
 	}
 
 	/**

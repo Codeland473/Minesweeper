@@ -41,7 +41,6 @@ public class Main {
 	private Panel panel;
 
 	public void start() {
-		System.out.println(Board.getSeed());
 		long curTime, pastTime, nspf = 1000000000 / FPS;
 		init();
 		pastTime = System.nanoTime();
@@ -59,7 +58,7 @@ public class Main {
 
 	private void init() {
 		// window = new Window("Minesweeper", true);
-		window = new Window(700, 700, "Minesweeper", true, true, true);
+		window = new Window(512, 512, "Minesweeper", true, true, true);
 		window.setClearColor(0.09803921568f, 0.09803921568f, 0.09803921568f, 1);
 		camera = new Camera(window.getWidth(), window.getHeight());
 		Shader.init();
