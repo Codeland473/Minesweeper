@@ -135,7 +135,6 @@ public class Board {
 				if (board[nx][ny].state == STATE_UNPRESSED && board[nx][ny].mines != MINE)
 					status = STATUS_PLAYING;
 			});
-			System.out.println(status);
 			if (status == STATUS_WIN) {
 				iterate((nx, ny, board) -> {
 					if (board[nx][ny].mines == MINE)
@@ -384,5 +383,26 @@ public class Board {
 			}
 		}
 		return ret;
+	}
+
+	public static String getSeed() {
+		int width  = 100;
+		int height = 100;
+		int size = width * height;
+		StringBuilder seed = new StringBuilder();
+		seed.append(width)
+		    .append('x')
+			.append(height)
+			.append(':')
+			.append((int) (Math.random() * size))
+			.append('#');
+		for (int i = 0; i < Math.ceil(size / 4.0f); ++i)
+			seed.append(hexDigit((int) (Math.random() * 16)));
+		return seed.toString();
+	}
+
+	private static char hexDigit(int num) {
+		if (num > 9) return (char) ('A' + num - 10);
+		else         return (char) ('0' + num     );
 	}
 }

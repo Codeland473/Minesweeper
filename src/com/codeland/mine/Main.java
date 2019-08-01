@@ -41,6 +41,7 @@ public class Main {
 	private Panel panel;
 
 	public void start() {
+		System.out.println(Board.getSeed());
 		long curTime, pastTime, nspf = 1000000000 / FPS;
 		init();
 		pastTime = System.nanoTime();
