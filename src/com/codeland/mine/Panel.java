@@ -33,6 +33,7 @@ import org.joml.Vector3f;
 
 import static com.codeland.mine.Board.*;
 import static com.codeland.mine.ResetButton.*;
+import static com.codeland.mine.ToggleButton.*;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2;
 
@@ -65,6 +66,11 @@ public class Panel {
 
 	private BorderRect topBar;
 	private ResetButton resetButton;
+	private ToggleButton equalHighlighting;
+	private ToggleButton exceedHighlighting;
+
+	private int highlightEqual;
+	private int highlightExceed;
 
 	private int status;
 
@@ -109,6 +115,8 @@ public class Panel {
 
 		topBar = new BorderRect(camera, tileDim / 2, upOffset - tileDim * 4.5f, 0, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2, true);
 		resetButton = new ResetButton(window, camera, (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
+		equalHighlighting  = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_GREEN, STATE_ON);
+		exceedHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim, COLOR_RED,   STATE_ON);  
 	}
 
 	public void update() {
@@ -145,6 +153,8 @@ public class Panel {
 
 			topBar.set(tileDim / 2, upOffset - tileDim * 4.5f, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2);
 			resetButton.set( (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
+			equalHighlighting.set(  camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
+			exceedHighlighting.set( camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim);
 		}
 
 		if (status == STATUS_PLAYING) {
@@ -165,6 +175,12 @@ public class Panel {
 		resetButton.update();
 		if (resetButton.getState() == BUTTON_STATE_RELEASED)
 			board.load();
+
+		equalHighlighting.update();
+		highlightEqual = equalHighlighting.getState();
+
+		exceedHighlighting.update();
+		highlightExceed = exceedHighlighting.getState();
 
 		status = board.checkStatus();
 
@@ -189,6 +205,8 @@ public class Panel {
 	 */
 	public void render() {
 		resetButton.render();
+		equalHighlighting.render();
+		exceedHighlighting.render();
 		outer.render();
 		inner.render();
 		topBar.render();
@@ -209,7 +227,12 @@ public class Panel {
 					if (index == MINE || index == 0)
 						renderTile(xPos, yPos, nums[index]);
 					else {
-						renderTile(xPos, yPos, backs[this.board.flagCount(x, y)]);
+						int flagCount = this.board.flagCount(x, y);
+						switch (flagCount) {
+							case 2: if (highlightExceed == 0) flagCount = 0; break;
+							case 1: if (highlightEqual  == 0) flagCount = 0; break;
+						}
+						renderTile(xPos, yPos, backs[flagCount]);
 						renderTile(xPos, yPos, nums[index]);
 					}
 					break;
