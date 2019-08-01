@@ -32,6 +32,7 @@ import com.gnarly.engine.model.TexRect;
 import org.joml.Vector3f;
 
 import static com.codeland.mine.Board.*;
+import static com.codeland.mine.Button.BUTTON_STATE_RELEASED;
 import static com.codeland.mine.ResetButton.*;
 import static com.codeland.mine.ToggleButton.*;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
@@ -79,6 +80,7 @@ public class Panel {
 		this.camera = camera;
 
 		board = new Board();
+		board.reset(30, 16, 170);
 
 		status = STATUS_PLAYING;
 
@@ -174,7 +176,7 @@ public class Panel {
 
 		resetButton.update();
 		if (resetButton.getState() == BUTTON_STATE_RELEASED)
-			board.load();
+			board.reset(30, 16, 170);
 
 		equalHighlighting.update();
 		highlightEqual = equalHighlighting.getState();

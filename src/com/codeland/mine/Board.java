@@ -26,7 +26,10 @@
 
 package com.codeland.mine;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Board {
 
@@ -88,11 +91,13 @@ public class Board {
 
 	private int status;
 
+	private int mineCount;
+	private String seed;
+
 	public Board() {
 		pressX = -1;
 		pressY = -1;
 		flagged = 0;
-		load();
 	}
 
 	/**
@@ -122,6 +127,8 @@ public class Board {
 	private void press(int x, int y) {
 		// Set the state of the pressed tile to pressed
 		board[x][y].state = STATE_PRESSED;
+		if (seed == null)
+			load(x * height() + y);
 		// If the tile had no adjacent mines and wasn't
 		// a mine itself press all of it's neighbors as well
 		if (board[x][y].mines == 0)
@@ -130,8 +137,7 @@ public class Board {
 			status = STATUS_LOSE;
 			iterate((nx, ny, board) -> board[nx][ny].state = STATE_PRESSED);
 			board[x][y].state = STATE_DEAD;
-		}
-		else {
+		} else {
 			status = STATUS_WIN;
 			iterate((nx, ny, board) -> {
 				if (board[nx][ny].state == STATE_UNPRESSED && board[nx][ny].mines != MINE)
@@ -355,25 +361,94 @@ public class Board {
 			return 0;
 	}
 
+	public void reset(int width, int height, int mineCount) {
+		status = STATUS_PLAYING;
+		// Create the board
+		board = new Element[width][height];
+		// Set the initial state of the tile and copy the mine positions in
+		iterate((i, j, board) -> board[i][j] = new Element(STATE_UNPRESSED, 0));
+
+		seed = null;
+		this.mineCount = mineCount;
+	}
+
+	private static class Biterator {
+
+		private char[] hex;
+		private int index;
+		private int subindex;
+		private int bits;
+
+		public Biterator(String hex) {
+			this.hex = hex.toCharArray();
+			index = -1;
+		}
+
+		public boolean next() {
+			if (subindex == 0) {
+				if (index == hex.length - 1)
+					return false;
+				bits = fromHex(hex[++index]);
+			}
+			boolean ret = ((bits >> (3 - subindex)) & 1) > 0;
+			subindex = (subindex + 1) % 4;
+			return ret;
+		}
+
+		private static int fromHex(char c) {
+			int bits;
+			if (c >= 'A' && c <= 'F')
+				bits = c - 'A' + 10;
+			else if (c >= 'a' && c <= 'f')
+				bits = c - 'a' + 10;
+			else
+				bits = c - '0';
+			return bits;
+		}
+	}
+
+	public void reset(String seed) {
+		final String SEED_REGEX = "(\\d+)x(\\d+):(\\d+)#([\\da-fA-F]+)";
+		if (seed != null && seed.matches(SEED_REGEX)) {
+			this.seed = seed;
+			Matcher match = Pattern.compile(SEED_REGEX).matcher(seed);
+			match.find();
+			final int width = Integer.parseInt(match.group(1));
+			final int height = Integer.parseInt(match.group(2));
+			final int firstPress = Integer.parseInt(match.group(3));
+			status = STATUS_PLAYING;
+			board = new Element[width][height];
+			iterate((i, j, board) -> board[i][j] = new Element(STATE_UNPRESSED, 0));
+			Biterator bits = new Biterator(match.group(4));
+			mineCount = 0;
+			iterate((i, j, board) -> {
+				board[i][j].mines = bits.next() ? MINE : 0;
+				++mineCount;
+			});
+			determineNeighbors();
+			press(firstPress / height(), firstPress % height);
+			calculateSeed();
+		}
+		else
+			reset("16x16:0#000E0A88C8808AA8A8FE3D6057E17B95F002F8A3C4210391870C03B8C20C1063");
+	}
+
 	/**
 	 * Load the board
 	 */
-	public void load() {
-		status = STATUS_PLAYING;
-		// Get the mine positions
-		boolean[][] mines = loadMines();
-		// Create the board
-		board = new Element[mines.length][mines[0].length];
-		// Set the initial state of the tile and copy the mine positions in
-		iterate((i, j, board) -> {
-			board[i][j] = new Element(
-				// All tiles start unpressed
-				STATE_UNPRESSED,
-				// If there is a mine here set the tile to a mine
-				// otherwise set it to 0 neighbors (determine later)
-				mines[i][j] ? MINE : 0
-			);
-		});
+	public void load(int firstPress) {
+		boolean[][] mines = loadMines(width(), height(), firstPress, mineCount);
+		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
+		determineNeighbors();
+		calculateSeed();
+
+		int[][] mineBoard = new int[width()][height()];
+		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
+		BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
+		System.out.println("canBeSolved " + solver.isSolvable());
+	}
+
+	private void determineNeighbors() {
 		// Determine the number of mine neighbors each tile has
 		iterate((i, j, board) -> {
 			// If the tile is a mine
@@ -387,6 +462,45 @@ public class Board {
 		});
 	}
 
+	private void calculateSeed() {
+		int length = width() * height();
+		int digit;
+		StringBuilder seed = new StringBuilder();
+		for (int i = 0; i < length; i += 4) {
+			digit = 0;
+			for (int j = i; j < i + 4; ++j) {
+				digit <<= 1;
+				if (j < length)
+					digit |= (board[j / height()][j % height()].mines == MINE) ? 1 : 0;
+			}
+			seed.append(hexDigit(digit));
+		}
+		this.seed = seed.toString();
+	}
+
+	private static class MineLocation {
+
+		private int index;
+		private int offset;
+
+		public MineLocation(int index) {
+			this.index = index;
+			offset = 1;
+		}
+
+		public int getIndex() {
+			return index;
+		}
+
+		public void increment(int amount) {
+			offset += amount;
+		}
+
+		public int getOffset() {
+			return offset;
+		}
+	}
+
 	/**
 	 * Load the mine positions
 	 * false - no mine
@@ -394,31 +508,37 @@ public class Board {
 	 *
 	 * @return Returns an array of booleans which represents the mine layout
 	 */
-	private static boolean[][] loadMines() {
-		int[][] board = FieldLoader.loadField(30, 16, 50, 0, 15);
-		boolean[][] ret = new boolean[30][16];
-		for (int i = 0; i < ret.length; ++i) {
-			for (int j = 0; j < ret[0].length; ++j) {
-				ret[i][j] = board[i][j] == 9;
-			}
+	private static boolean[][] loadMines(int width, int height, int firstPress, int mineCount) {
+		Random random = new Random();
+		ArrayList<MineLocation> occupied = new ArrayList<>();
+		occupied.add(new MineLocation(firstPress));
+		boolean[][] field = new boolean[width][height];
+		for (int i = 0; i < mineCount; ++i) {
+			int index = random.nextInt(width * height - i - 1);
+			int j = 0;
+			for (; j < occupied.size() && occupied.get(j).getIndex() <= index; ++j)
+				index += occupied.get(j).getOffset();
+			field[index / height][index % height] = true;
+			occupied.add(j, new MineLocation(index));
+			if (j < occupied.size() - 1)
+				merge(occupied, j);
+			if (j > 0)
+				merge(occupied, j - 1);
 		}
-		return ret;
+		return field;
 	}
 
-	public static String getSeed() {
-		int width  = 100;
-		int height = 100;
-		int size = width * height;
-		StringBuilder seed = new StringBuilder();
-		seed.append(width)
-		    .append('x')
-			.append(height)
-			.append(':')
-			.append((int) (Math.random() * size))
-			.append('#');
-		for (int i = 0; i < Math.ceil(size / 4.0f); ++i)
-			seed.append(hexDigit((int) (Math.random() * 16)));
-		return seed.toString();
+	private static void merge(ArrayList<MineLocation> occupied, int index) {
+		MineLocation lower = occupied.get(index);
+		MineLocation upper = occupied.get(index + 1);
+		if (lower.getIndex() + lower.getOffset() == upper.getIndex()) {
+			lower.increment(upper.getOffset());
+			occupied.remove(index + 1);
+		}
+	}
+
+	public String getSeed() {
+		return seed;
 	}
 
 	private static char hexDigit(int num) {
