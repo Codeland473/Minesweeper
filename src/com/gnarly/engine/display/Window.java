@@ -82,12 +82,6 @@ import org.lwjgl.glfw.GLFWVidMode;
 
 public class Window {
 
-	public static String resolution;
-	
-	public static int
-		SCREEN_WIDTH,
-		SCREEN_HEIGHT;
-	
 	public static final int
 		BUTTON_RELEASED  = 0,
 		BUTTON_UNPRESSED = 1,
@@ -131,16 +125,12 @@ public class Window {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		
-		glfwWindowHint(GLFW_SAMPLES, 8);
+
 		glfwWindowHint(GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
 		glfwWindowHint(GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
 		glfwWindowHint(GLFW_MAXIMIZED, maximized ? GLFW_TRUE : GLFW_FALSE);
 		
 		GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-		SCREEN_WIDTH = vidMode.width();
-		SCREEN_HEIGHT = vidMode.height();
-		SCALE = SCREEN_HEIGHT / 1080f;
 		if(lwidth == 0 || lheight == 0) {
 			width = vidMode.width();
 			height = vidMode.height();
@@ -184,8 +174,6 @@ public class Window {
 			}
 		});
 
-		activateClearColor();
-		
 		glEnable(GL_TEXTURE_2D);
 		
 		glEnable(GL_DEPTH_TEST);
@@ -193,23 +181,10 @@ public class Window {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		glEnable(GL_MULTISAMPLE);
-		
 		int[] awidth = new int[1], aheight = new int[1];
 		glfwGetWindowSize(window, awidth, aheight);
 		width = awidth[0];
 		height = aheight[0];
-		
-		if(SCREEN_HEIGHT > 2160)
-			resolution = "8k";
-		else if(SCREEN_HEIGHT > 1440)
-			resolution = "4k";
-		else if(SCREEN_HEIGHT > 1080)
-			resolution = "1440p";
-		else if(SCREEN_HEIGHT > 720)
-			resolution = "1080p";
-		else
-			resolution = "720p";
 	}
 	
 	public void update() {
@@ -223,8 +198,8 @@ public class Window {
 		glfwPollEvents();
 	}
 	
-	public void activateClearColor() {
-		glClearColor(0, 0, 0, 1);
+	public void setClearColor(float r, float g, float b, float a) {
+		glClearColor(r, g, b, a);
 	}
 	
 	public int getWidth() {

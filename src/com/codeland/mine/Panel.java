@@ -32,6 +32,7 @@ import com.gnarly.engine.model.TexRect;
 import org.joml.Vector3f;
 
 import static com.codeland.mine.Board.*;
+import static com.codeland.mine.ResetButton.*;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2;
 
@@ -45,6 +46,7 @@ public class Panel {
 	private static TexRect flagged   = null;
 	private static TexRect depressed = null;
 	private static TexRect dead      = null;
+	private static TexRect win       = null;
 	private static TexRect[] nums    = null;
 
 	private Window window;
@@ -54,11 +56,16 @@ public class Panel {
 
 	private float tileDim;
 
-	private float pressX;
-	private float pressY;
-
 	private float leftOffset;
 	private float upOffset;
+
+	private BorderRect inner;
+	private BorderRect outer;
+
+	private BorderRect topBar;
+	private ResetButton resetButton;
+
+	private int status;
 
 	public Panel(Window window, Camera camera) {
 		this.window = window;
@@ -66,26 +73,36 @@ public class Panel {
 
 		board = new Board();
 
-		pressX = -1;
-		pressY = -1;
+		status = STATUS_PLAYING;
+
+		tileDim = Math.min(
+			camera.getWidth()  / (board.width()  + 2),
+			camera.getHeight() / (board.height() + 6)
+		);
 
 		// If the textures are unloaded load all the textures
 		if (unpressed == null) {
-			tileDim = Math.min(
-				camera.getWidth()  / board.width(),
-				camera.getHeight() / board.height()
-			);
-
 			unpressed = new TexRect(camera, "res/img/tiles/unpressed.png", 0, 0, 0, tileDim, tileDim, 0, false);
 			flagged   = new TexRect(camera, "res/img/tiles/flagged.png",   0, 0, 0, tileDim, tileDim, 0, false);
 			depressed = new TexRect(camera, "res/img/tiles/depressed.png", 0, 0, 0, tileDim, tileDim, 0, false);
-			dead      = new TexRect(camera, "res/img/tiles/mine-dead.png",      0, 0, 0, tileDim, tileDim, 0, false);
+			dead      = new TexRect(camera, "res/img/tiles/mine-dead.png", 0, 0, 0, tileDim, tileDim, 0, false);
+			win       = new TexRect(camera, "res/img/tiles/mine-win.png",  0, 0, 0, tileDim, tileDim, 0, false);
 
 			nums = new TexRect[10];
 			for (int i = 0; i < nums.length - 1; ++i)
 				nums[i] = new TexRect(camera, "res/img/tiles/num-" + i + ".png", 0, 0, 0, tileDim, tileDim, 0, false);
 			nums[9] = new TexRect(camera, "res/img/tiles/mine.png", 0, 0, 0, tileDim, tileDim, 0, false);
 		}
+
+		// Calculate the render offsets from the top and bottom of the window
+		leftOffset = (window.getWidth()  - (board.width() * tileDim)) / 2;
+		upOffset   = (window.getHeight() - ((board.height() - 4) * tileDim)) / 2;
+
+		outer = new BorderRect(camera, 0,           0,           0, camera.getWidth(),           camera.getHeight(),           tileDim / 2,false);
+		inner = new BorderRect(camera, leftOffset - tileDim / 2, upOffset - tileDim / 2, 0, board.width() * tileDim + tileDim, board.height() * tileDim + tileDim, tileDim / 2, true);
+
+		topBar = new BorderRect(camera, tileDim / 2, upOffset - tileDim * 4.5f, 0, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2, true);
+		resetButton = new ResetButton(window, camera, (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
 	}
 
 	public void update() {
@@ -96,41 +113,76 @@ public class Panel {
 
 			// Get the largest tile dimension that will allow the entire board to fit within the window
 			tileDim = Math.min(
-				camera.getWidth()  / board.width(),
-				camera.getHeight() / board.height()
+				camera.getWidth() / (board.width() + 2),
+				camera.getHeight() / (board.height() + 6)
 			);
+
+			// Calculate the render offsets from the top and bottom of the window
+			leftOffset = (window.getWidth() - (board.width() * tileDim)) / 2;
+			upOffset = (window.getHeight() - ((board.height() - 4) * tileDim)) / 2;
 
 			// Reset all the tile dimensions
 			unpressed.setDims(tileDim, tileDim);
 			  flagged.setDims(tileDim, tileDim);
 			depressed.setDims(tileDim, tileDim);
+			     dead.setDims(tileDim, tileDim);
+			      win.setDims(tileDim, tileDim);
 
 			for (int i = 0; i < nums.length; ++i)
 				nums[i].setDims(tileDim, tileDim);
+
+			outer.set(0, 0, camera.getWidth(), camera.getHeight(), tileDim / 2);
+			inner.set(leftOffset - tileDim / 2, upOffset - tileDim / 2, board.width() * tileDim + tileDim, board.height() * tileDim + tileDim, tileDim / 2);
+
+			topBar.set(tileDim / 2, upOffset - tileDim * 4.5f, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2);
+			resetButton.set( (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
 		}
 
-		// Calculate the render offsets from the top and bottom of the window
-		leftOffset = (window.getWidth()  - (board.width()  * tileDim)) / 2;
-		upOffset   = (window.getHeight() - (board.height() * tileDim)) / 2;
+		if (status == STATUS_PLAYING) {
+			// If the left mouse button is pressed...
+			if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
+				// Trigger a depress action on the square that was clicked
+				checkBoardPress(false, board::depress);
+			// If the left mouse button was released this frame...
+			else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED)
+				// Trigger a release action on the square that was clicked
+				checkBoardPress(true, board::release);
+			// If the right mouse button was pressed this frame...
+			else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED)
+				// Trigger a flag action on the square that was clicked
+				checkBoardPress(false, board::flag);
+		}
 
-		// If the left mouse button is pressed...
-		if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
-			// Trigger a depress action on the square that was clicked
-			checkBoardPress(board::depress);
-		// If the left mouse button was released this frame...
-		else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED)
-			// Trigger a release action on the square that was clicked
-			checkBoardPress(board::release);
-		// If the right mouse button was pressed this frame...
-		else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED)
-			// Trigger a flag action on the square that was clicked
-			checkBoardPress(board::flag);
+		resetButton.update();
+		if (resetButton.getState() == BUTTON_STATE_RELEASED)
+			board.load();
+
+		status = board.checkStatus();
+
+		switch (status) {
+			case STATUS_LOSE:
+				resetButton.setFace(FACE_STATE_DEAD);
+				break;
+			case STATUS_WIN:
+				resetButton.setFace(FACE_STATE_WIN);
+				break;
+			case STATUS_PLAYING:
+				if (board.depressed())
+					resetButton.setFace(FACE_STATE_TENSE);
+				else
+					resetButton.setFace(FACE_STATE_ALIVE);
+				break;
+		}
 	}
 
 	/**
 	 * Renders the board centered in the window
 	 */
 	public void render() {
+		resetButton.render();
+		outer.render();
+		inner.render();
+		topBar.render();
 		// Render each tile in the board
 		board.iterate((x, y, board) -> {
 			// Calculate the position of the current tile
@@ -142,6 +194,7 @@ public class Panel {
 				case STATE_FLAGGED:   renderTile(xPos, yPos, flagged                ); break;
 				case STATE_DEPRESSED: renderTile(xPos, yPos, depressed              ); break;
 				case STATE_DEAD:      renderTile(xPos, yPos, dead                   ); break;
+				case STATE_WIN:       renderTile(xPos, yPos, win                    ); break;
 				case STATE_PRESSED:   renderTile(xPos, yPos, nums[board[x][y].mines]); break;
 			}
 		});
@@ -153,15 +206,16 @@ public class Panel {
 	 *
 	 * @param action - The action to exectue if the mouse lies within the board
 	 */
-	private void checkBoardPress(BoardPressAction action) {
+	private void checkBoardPress(boolean override, BoardPressAction action) {
 		// Get the mouse coordinates in camera space
 		Vector3f coords = window.getMouseCoords(camera);
 		// Get the position on the board that coordinate falls in
 		int x = (int) ((coords.x - leftOffset) / tileDim);
 		int y = (int) ((coords.y -   upOffset) / tileDim);
 		// If the position is within the bounds of the board execute the action
-		if (x > -1 && x < board.width()
-		 && y > -1 && y < board.height())
+		if ((x > -1 && x < board.width()
+		  && y > -1 && y < board.height())
+		  || override)
 			action.execute(x, y);
 	}
 

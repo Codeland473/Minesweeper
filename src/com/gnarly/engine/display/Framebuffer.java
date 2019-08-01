@@ -130,7 +130,7 @@ public class Framebuffer {
 	void unbind(Window window) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, window.getWidth(), window.getHeight());
-		window.activateClearColor();
+		window.setClearColor(0.09803921568f, 0.09803921568f, 0.09803921568f, 1);
 	}
 
 	void clear() {

@@ -116,6 +116,11 @@ public class Rect {
 		this.height = height;
 	}
 
+	public void setDims(Vector2f dims) {
+		this.width  = dims.x;
+		this.height = dims.y;
+	}
+
 	public void setPosition(float x, float y) {
 		position.set(x, y, position.z);
 	}
@@ -157,5 +162,10 @@ public class Rect {
 	
 	public void setAngle(float angle) {
 		this.rotation = angle;
+	}
+
+	public boolean contains(Vector3f coordinate) {
+		return coordinate.x >= position.x && coordinate.x < position.x + width
+		    && coordinate.y >= position.y && coordinate.y < position.y + height;
 	}
 }

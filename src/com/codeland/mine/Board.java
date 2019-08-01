@@ -61,9 +61,17 @@ public class Board {
 		STATE_FLAGGED    = 0x01, // Mine count hidden, but flagged as a mine
 		STATE_DEPRESSED  = 0x02, // Tile appears pressed, but mine count is hidden. Occurs while mouse is held down
 		STATE_PRESSED    = 0x03, // Mine count revealed
-		STATE_DEAD       = 0x04; // If a mine is pressed that tile is set as the dead tile
+		STATE_DEAD       = 0x04, // If a mine is pressed that tile is set as the dead tile
+		STATE_WIN        = 0x05; // If the game is won all mines are revealed in green
+
+	public static final int
+		STATUS_PLAYING = 0x00,
+		STATUS_WIN     = 0x01,
+		STATUS_LOSE    = 0x02;
 
 	private static final int MINE = 0x09; // The ID of a mine
+
+	private static final int BUCKET_FLAG = 0x01 << 16;
 
 	private static final boolean
 		DEPRESS_SELF      = false, // If the tile itself was depressed. E.g. a tile that was unpressed was sent the depress trigger
@@ -75,6 +83,8 @@ public class Board {
 	private int flagged;         // If type is DEPRESS_NEIGHBORS, the number of flags adjacent to the depressed tile
 
 	private Element[][] board;   // The actual board state
+
+	private int status;
 
 	public Board() {
 		pressX = -1;
@@ -114,6 +124,25 @@ public class Board {
 		// a mine itself press all of it's neighbors as well
 		if (board[x][y].mines == 0)
 			neighbors(x, y, this::bucketClear);
+		if (board[x][y].mines == MINE) {
+			status = STATUS_LOSE;
+			iterate((nx, ny, board) -> board[nx][ny].state = STATE_PRESSED);
+			board[x][y].state = STATE_DEAD;
+		}
+		else {
+			status = STATUS_WIN;
+			iterate((nx, ny, board) -> {
+				if (board[nx][ny].state == STATE_UNPRESSED && board[nx][ny].mines != MINE)
+					status = STATUS_PLAYING;
+			});
+			System.out.println(status);
+			if (status == STATUS_WIN) {
+				iterate((nx, ny, board) -> {
+					if (board[nx][ny].mines == MINE)
+						board[nx][ny].state = STATE_WIN;
+				});
+			}
+		}
 	}
 
 	/**
@@ -188,26 +217,28 @@ public class Board {
 	 * @param y - The y coordinate of the tile to release
 	 */
 	public void release(int x, int y) {
-		// If the tile that was depressed and the tile being released are different, reset the depressed tile index and ignore it
-		if (pressX != x || pressY != y)
-			clearDepression();
-		else {
-			// If the depression type is DEPRESS_SELF, press it
-			if (depressType == DEPRESS_SELF)
-				press(x, y);
-			// If the depression type is DEPRESS_NEIGHBORS and the adjacent flag count is enough, then press all depressed neighbors
-			else if (flagged >= board[x][y].mines){
-				neighbors(x, y, (nx, ny, board) -> {
-					if (board[nx][ny].state == STATE_DEPRESSED)
-						press(nx, ny);
-				});
-			}
-			// If the depression type is DEPRESS_NEIGHBORS and the adjacent flag count is not enough, then unpress all the depressed neighbors
-			else
+		if (pressX != -1 && pressY != -1) {
+			// If the tile that was depressed and the tile being released are different, reset the depressed tile index and ignore it
+			if (pressX != x || pressY != y)
 				clearDepression();
-			// Reset the depressed tile index
-			pressX = -1;
-			pressY = -1;
+			else {
+				// If the depression type is DEPRESS_SELF, press it
+				if (depressType == DEPRESS_SELF)
+					press(x, y);
+					// If the depression type is DEPRESS_NEIGHBORS and the adjacent flag count is enough, then press all depressed neighbors
+				else if (flagged >= board[x][y].mines) {
+					neighbors(x, y, (nx, ny, board) -> {
+						if (board[nx][ny].state == STATE_DEPRESSED)
+							press(nx, ny);
+					});
+				}
+				// If the depression type is DEPRESS_NEIGHBORS and the adjacent flag count is not enough, then unpress all the depressed neighbors
+				else
+					clearDepression();
+				// Reset the depressed tile index
+				pressX = -1;
+				pressY = -1;
+			}
 		}
 	}
 
@@ -265,7 +296,7 @@ public class Board {
 						action.execute(nx, ny, board);
 				}
 			}
-		};
+		}
 	}
 
 	/**
@@ -276,17 +307,40 @@ public class Board {
 	 * @param board - The board to bucket through
 	 */
 	private void bucketClear(int x, int y, Element[][] board) {
-		if (board[x][y].state == STATE_UNPRESSED) {
-			press(x, y);
-			if (board[x][y].mines == 0)
-				neighbors(x, y, this::bucketClear);
+		PositionStack stack = new PositionStack(board.length * board[0].length);
+		board[x][y].state ^= BUCKET_FLAG;
+		stack.push(x * height() + y);
+		while (!stack.isEmpty()) {
+			x = stack.pop();
+			y = x % board[0].length;
+			x /= board[0].length;
+			board[x][y].state ^= BUCKET_FLAG;
+			neighbors(x, y, (nx, ny, leBoard) -> {
+				if (leBoard[nx][ny].state == STATE_UNPRESSED) {
+					leBoard[nx][ny].state = STATE_PRESSED;
+					if (leBoard[nx][ny].mines == 0
+							&& (leBoard[nx][ny].state & BUCKET_FLAG) == 0) {
+						leBoard[nx][ny].state ^= BUCKET_FLAG;
+						stack.push(nx * height() + ny);
+					}
+				}
+			});
 		}
+	}
+
+	public int checkStatus() {
+		return status;
+	}
+
+	public boolean depressed() {
+		return pressX != -1 && pressY != -1;
 	}
 
 	/**
 	 * Load the board
 	 */
 	public void load() {
+		status = STATUS_PLAYING;
 		// Get the mine positions
 		boolean[][] mines = loadMines();
 		// Create the board
@@ -322,10 +376,10 @@ public class Board {
 	 * @return Returns an array of booleans which represents the mine layout
 	 */
 	private static boolean[][] loadMines() {
-		boolean[][] ret = new boolean[30][16];
+		boolean[][] ret = new boolean[30][30];
 		for (int i = 0; i < ret.length; ++i)
 			for (int j = 0; j < ret[0].length; ++j)
-				if (Math.random() > 0.65)
+				if (Math.random() > 0.98)
 					ret[i][j] = true;
 		return ret;
 	}
