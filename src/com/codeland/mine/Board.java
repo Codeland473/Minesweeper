@@ -427,7 +427,7 @@ public class Board {
 			});
 			determineNeighbors();
 			press(firstPress / height(), firstPress % height);
-			
+
 			int[][] mineBoard = new int[width()][height()];
 			iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
 			BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());

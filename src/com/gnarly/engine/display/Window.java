@@ -93,6 +93,7 @@ public class Window {
 		
 		if(!glfwInit()) {
 			System.err.println("GLFW failed to initialize!");
+			System.err.println("GLFW failed to initialize!");
 			System.exit(-1);
 		}
 		
@@ -226,7 +227,7 @@ public class Window {
 
 	public void setIcon(String imagePath) {
 		GLFWImage image = makeGLFWImage(imagePath);
-		GLFWImage.Buffer buffer = GLFWImage.malloc(1);
+		GLFWImage.Buffer buffer = GLFWImage.create(1);
 		buffer.put(0, image);
 
 		glfwSetWindowIcon(window, buffer);
@@ -246,8 +247,6 @@ public class Window {
 
 		int[] rgbArray = new int[len];
 
-		System.out.println();
-
 		b.getRGB(0, 0, bwi, bhi, rgbArray, 0, bwi);
 
 		ByteBuffer buffer = BufferUtils.createByteBuffer(len * 4);
@@ -263,7 +262,7 @@ public class Window {
 		buffer.flip();
 
 		// create a GLFWImage
-		GLFWImage img= GLFWImage.create();
+		GLFWImage img = GLFWImage.create();
 		img.width(bwi);     // setup the images' width
 		img.height(bhi);   // setup the images' height
 		img.pixels(buffer);   // pass image data
