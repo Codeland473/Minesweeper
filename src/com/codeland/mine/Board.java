@@ -427,7 +427,11 @@ public class Board {
 			});
 			determineNeighbors();
 			press(firstPress / height(), firstPress % height);
-			calculateSeed();
+			
+			int[][] mineBoard = new int[width()][height()];
+			iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
+			BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
+			System.out.println("canBeSolved " + solver.isSolvable());
 		}
 		else
 			reset("16x16:0#000E0A88C8808AA8A8FE3D6057E17B95F002F8A3C4210391870C03B8C20C1063");
@@ -440,12 +444,12 @@ public class Board {
 		boolean[][] mines = loadMines(width(), height(), firstPress, mineCount);
 		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
 		determineNeighbors();
-		calculateSeed();
+		calculateSeed(width(), height(), firstPress);
 
 		int[][] mineBoard = new int[width()][height()];
 		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
-		// BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
-		// System.out.println("canBeSolved " + solver.isSolvable());
+		BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
+		System.out.println("canBeSolved " + solver.isSolvable());
 	}
 
 	private void determineNeighbors() {
@@ -462,10 +466,16 @@ public class Board {
 		});
 	}
 
-	private void calculateSeed() {
+	private void calculateSeed(int width, int height, int firstPress) {
 		int length = width() * height();
 		int digit;
 		StringBuilder seed = new StringBuilder();
+		seed.append(width)
+		    .append('x')
+		    .append(height)
+		    .append(':')
+		    .append(firstPress)
+		    .append('#');
 		for (int i = 0; i < length; i += 4) {
 			digit = 0;
 			for (int j = i; j < i + 4; ++j) {
@@ -475,6 +485,7 @@ public class Board {
 			}
 			seed.append(hexDigit(digit));
 		}
+		System.out.println(seed.toString());
 		this.seed = seed.toString();
 	}
 
