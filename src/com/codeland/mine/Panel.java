@@ -121,7 +121,7 @@ public class Panel {
 		resetButton = new ResetButton(window, camera, (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
 		equalHighlighting   = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_GREEN, STATE_ON);
 		exceedHighlighting  = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim, COLOR_RED,   STATE_ON);
-		zeroBoxHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 6.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_WHITE, STATE_ON);
+		zeroBoxHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 5.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_WHITE, STATE_OFF);
 	}
 
 	public void update() {
@@ -160,7 +160,7 @@ public class Panel {
 			resetButton.set( (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
 			equalHighlighting.set(  camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
 			exceedHighlighting.set( camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim);
-			zeroBoxHighlighting.set(camera.getWidth() - tileDim * 6.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
+			zeroBoxHighlighting.set(camera.getWidth() - tileDim * 5.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
 		}
 
 		if (status == STATUS_PLAYING) {
@@ -180,7 +180,7 @@ public class Panel {
 
 		resetButton.update();
 		if (resetButton.getState() == BUTTON_STATE_RELEASED)
-			board.reset(30, 16, 170);
+			board.reset(30, 16, 50);
 
 		equalHighlighting.update();
 		highlightEqual = equalHighlighting.getState();
@@ -189,7 +189,7 @@ public class Panel {
 		highlightExceed = exceedHighlighting.getState();
 
 		zeroBoxHighlighting.update();
-		highlightZero = exceedHighlighting.getState();
+		highlightZero = zeroBoxHighlighting.getState();
 
 		status = board.checkStatus();
 
@@ -234,8 +234,14 @@ public class Panel {
 				case STATE_WIN:       renderTile(xPos, yPos, win                    ); break;
 				case STATE_PRESSED:
 					int index = board[x][y].mines;
-					if (index == MINE || index == 0)
+					if (index == MINE)
 						renderTile(xPos, yPos, nums[index]);
+					else if (index == 0) {
+						if (highlightZero == 1 && status == STATUS_PLAYING)
+							renderTile(xPos, yPos, backs[1]);
+						else
+							renderTile(xPos, yPos, nums[0]);
+					}
 					else {
 						int flagCount = this.board.flagCount(x, y);
 						switch (flagCount) {
