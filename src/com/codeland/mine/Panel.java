@@ -32,7 +32,7 @@ import com.gnarly.engine.model.TexRect;
 import org.joml.Vector3f;
 
 import static com.codeland.mine.Board.*;
-import static com.codeland.mine.Button.BUTTON_STATE_RELEASED;
+//import static com.codeland.mine.Button.BUTTON_STATE_RELEASED;
 import static com.codeland.mine.ResetButton.*;
 import static com.codeland.mine.ToggleButton.*;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
@@ -69,9 +69,11 @@ public class Panel {
 	private ResetButton resetButton;
 	private ToggleButton equalHighlighting;
 	private ToggleButton exceedHighlighting;
+	private ToggleButton zeroBoxHighlighting;
 
 	private int highlightEqual;
 	private int highlightExceed;
+	private int highlightZero;
 
 	private int status;
 
@@ -80,7 +82,7 @@ public class Panel {
 		this.camera = camera;
 
 		board = new Board();
-		board.reset(30, 16, 170);
+		board.reset(30, 16, 50);
 
 		status = STATUS_PLAYING;
 
@@ -117,8 +119,9 @@ public class Panel {
 
 		topBar = new BorderRect(camera, tileDim / 2, upOffset - tileDim * 4.5f, 0, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2, true);
 		resetButton = new ResetButton(window, camera, (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
-		equalHighlighting  = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_GREEN, STATE_ON);
-		exceedHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim, COLOR_RED,   STATE_ON);  
+		equalHighlighting   = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_GREEN, STATE_ON);
+		exceedHighlighting  = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim, COLOR_RED,   STATE_ON);
+		zeroBoxHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 6.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_WHITE, STATE_ON);
 	}
 
 	public void update() {
@@ -157,6 +160,7 @@ public class Panel {
 			resetButton.set( (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
 			equalHighlighting.set(  camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
 			exceedHighlighting.set( camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim);
+			zeroBoxHighlighting.set(camera.getWidth() - tileDim * 6.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
 		}
 
 		if (status == STATUS_PLAYING) {
@@ -184,6 +188,9 @@ public class Panel {
 		exceedHighlighting.update();
 		highlightExceed = exceedHighlighting.getState();
 
+		zeroBoxHighlighting.update();
+		highlightZero = exceedHighlighting.getState();
+
 		status = board.checkStatus();
 
 		switch (status) {
@@ -209,6 +216,7 @@ public class Panel {
 		resetButton.render();
 		equalHighlighting.render();
 		exceedHighlighting.render();
+		zeroBoxHighlighting.render();
 		outer.render();
 		inner.render();
 		topBar.render();
