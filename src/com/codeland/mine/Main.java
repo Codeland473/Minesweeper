@@ -59,6 +59,7 @@ public class Main {
 	private void init() {
 		// window = new Window("Minesweeper", true);
 		window = new Window(512, 512, "Minesweeper", true, true, true);
+		window.setIcon("res/img/icon.png");
 		window.setClearColor(0.09803921568f, 0.09803921568f, 0.09803921568f, 1);
 		camera = new Camera(window.getWidth(), window.getHeight());
 		Shader.init();
