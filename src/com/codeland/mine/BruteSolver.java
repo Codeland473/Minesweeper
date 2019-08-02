@@ -45,11 +45,11 @@ public class BruteSolver {
 				if (board[i][j] == -1) {
 					board[i][j] = 9;
 					boolean canBeMine = softSolvable();
-					board = temp;
-					temp = copyBoard();
+					board = copyBoard(temp);
+					//temp = copyBoard();
 					board[i][j] = -2;
 					boolean canBeNotMine = softSolvable();
-					board = temp;
+					board = copyBoard(temp);
 					if (canBeMine != canBeNotMine) {
 						if (canBeMine) {
 							board[i][j] = 9;
@@ -68,7 +68,7 @@ public class BruteSolver {
 		boolean ret = false;
 		while (true) {
 			while (true) {
-				if (!flagMustBeMines() && !markCantBeMines()) {
+  				if (!flagMustBeMines() && !markCantBeMines()) {
 					break;
 				} else {
 					ret = true;
@@ -77,12 +77,12 @@ public class BruteSolver {
 			if (boardHasInconsistencies()) {
 				return false;
 			}
+			if (canFinish()) {
+				ret = true;
+			}
 			if (!deepIsSolvable()) {
 				break;
 			} else {
-				ret = true;
-			}
-			if (canFinish()) {
 				ret = true;
 			}
 		}
@@ -259,6 +259,15 @@ public class BruteSolver {
 	}
 
 	private int[][] copyBoard() {
+		int[][] ret =  new int[board.length][board[0].length];
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				ret[i][j] = board[i][j];
+			}
+		}
+		return ret;
+	}
+	public static int[][] copyBoard(int[][] board) {
 		int[][] ret =  new int[board.length][board[0].length];
 		for (int i = 0; i < board.length; ++i) {
 			for (int j = 0; j < board[0].length; ++j) {
