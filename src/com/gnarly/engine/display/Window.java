@@ -26,40 +26,7 @@
 
 package com.gnarly.engine.display;
 
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR;
-import static org.lwjgl.glfw.GLFW.GLFW_DECORATED;
-import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_LAST;
-import static org.lwjgl.glfw.GLFW.GLFW_MAXIMIZED;
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LAST;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_FORWARD_COMPAT;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE;
-import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
-import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
-import static org.lwjgl.glfw.GLFW.GLFW_REPEAT;
-import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
-import static org.lwjgl.glfw.GLFW.GLFW_SAMPLES;
-import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
-import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
-import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
-import static org.lwjgl.glfw.GLFW.glfwGetWindowSize;
-import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowSizeCallback;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
-import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
-import static org.lwjgl.glfw.GLFW.glfwTerminate;
-import static org.lwjgl.glfw.GLFW.glfwWindowHint;
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
+import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL.createCapabilities;
 import static org.lwjgl.opengl.GL11.GL_BLEND;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
@@ -77,8 +44,16 @@ import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.opengl.GL13.GL_MULTISAMPLE;
 
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.glfw.GLFWVidMode;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class Window {
 
@@ -247,5 +222,52 @@ public class Window {
 	
 	public boolean wasResized() {
 		return resized;
+	}
+
+	public void setIcon(String imagePath) {
+		GLFWImage image = makeGLFWImage(imagePath);
+		GLFWImage.Buffer buffer = GLFWImage.malloc(1);
+		buffer.put(0, image);
+
+		glfwSetWindowIcon(window, buffer);
+
+	}
+	public static GLFWImage makeGLFWImage(String imagePath) {
+		BufferedImage b = null;
+		try {
+			b = ImageIO.read(new FileInputStream(imagePath));
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+
+		int bwi = b.getWidth();
+		int bhi = b.getHeight();
+		int len = bwi * bhi;
+
+		int[] rgbArray = new int[len];
+
+		System.out.println();
+
+		b.getRGB(0, 0, bwi, bhi, rgbArray, 0, bwi);
+
+		ByteBuffer buffer = BufferUtils.createByteBuffer(len * 4);
+
+		for(int i = 0; i < len; ++i) {
+			int rgb = rgbArray[i];
+			buffer.put((byte)(rgb >> 16 & 0xff));
+			buffer.put((byte)(rgb >>  8 & 0xff));
+			buffer.put((byte)(rgb       & 0xff));
+			buffer.put((byte)(rgb >> 24 & 0xff));
+		}
+
+		buffer.flip();
+
+		// create a GLFWImage
+		GLFWImage img= GLFWImage.create();
+		img.width(bwi);     // setup the images' width
+		img.height(bhi);   // setup the images' height
+		img.pixels(buffer);   // pass image data
+
+		return img;
 	}
 }
