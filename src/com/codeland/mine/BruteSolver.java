@@ -43,13 +43,18 @@ public class BruteSolver {
 		for (int i = 0; i < board.length; ++i) {
 			for (int j = 0; j < board[0].length; ++j) {
 				if (board[i][j] == -1) {
-					board[i][j] = 9;
-					boolean canBeMine = softSolvable();
-					board = copyBoard(temp);
-					//temp = copyBoard();
-					board[i][j] = -2;
-					boolean canBeNotMine = softSolvable();
-					board = copyBoard(temp);
+					boolean canBeMine = canBeMine(i, j);
+					if (!canBeMine) {
+						board[i][j] = 9;
+						canBeMine = softSolvable();
+						board = copyBoard(temp);
+					}
+					boolean canBeNotMine = !mustBeMine(i, j);
+					if (!canBeNotMine) {
+						board[i][j] = -2;
+						canBeNotMine = softSolvable();
+						board = copyBoard(temp);
+					}
 					if (canBeMine != canBeNotMine) {
 						if (canBeMine) {
 							board[i][j] = 9;
@@ -78,7 +83,8 @@ public class BruteSolver {
 				return false;
 			}
 			if (canFinish()) {
-				ret = true;
+				return true;
+				//ret = true;
 			}
 			if (!deepIsSolvable()) {
 				break;
@@ -224,7 +230,11 @@ public class BruteSolver {
 								--ret;
 							}
 						}
+					} else {
+						--ret;
 					}
+				} else {
+					--ret;
 				}
 			}
 		}

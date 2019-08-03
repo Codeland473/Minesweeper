@@ -82,7 +82,7 @@ public class Panel {
 		this.camera = camera;
 
 		board = new Board();
-		board.reset("30x16:195#1EABC08C440021D38EB1C2C0A02EC4F8C4E8048A10014029E4A1C0286E218C2253D086C2002A9B1591C308F988E4AC2211548718189B94A000182164 ");
+		board.reset(30, 16, 170);
 
 		status = STATUS_PLAYING;
 
@@ -179,9 +179,10 @@ public class Panel {
 		}
 
 		resetButton.update();
-		if (resetButton.getState() == BUTTON_STATE_RELEASED)
-			board.reset(30, 16, 170);
-
+		if (resetButton.getState() == BUTTON_STATE_RELEASED) {
+			board.reset(30, 16, 50);
+			//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
+		}
 		equalHighlighting.update();
 		highlightEqual = equalHighlighting.getState();
 
