@@ -441,13 +441,14 @@ public class Board {
 	 * Load the board
 	 */
 	public void load(int firstPress) {
-		boolean[][] mines = loadMines(width(), height(), firstPress, mineCount);
+		boolean[][] mines = BruteSolver.getSolvableBoard(width(), height(), mineCount, firstPress / height(), firstPress % height());
 		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
 		determineNeighbors();
-		calculateSeed(width(), height(), firstPress);
 
 		int[][] mineBoard = new int[width()][height()];
 		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
+		calculateSeed(width(), height(), firstPress);
+
 		BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
 		System.out.println("canBeSolved " + solver.isSolvable());
 	}
@@ -487,6 +488,29 @@ public class Board {
 		}
 		System.out.println(seed.toString());
 		this.seed = seed.toString();
+	}
+
+	private static String calculateSeed(int width, int height, int firstPress, boolean[][] field) {
+		int length = width * height;
+		int digit;
+		StringBuilder seed = new StringBuilder();
+		seed.append(width)
+				.append('x')
+				.append(height)
+				.append(':')
+				.append(firstPress)
+				.append('#');
+		for (int i = 0; i < length; i += 4) {
+			digit = 0;
+			for (int j = i; j < i + 4; ++j) {
+				digit <<= 1;
+				if (j < length)
+					digit |= (field[j / height][j % height]) ? 1 : 0;
+			}
+			seed.append(hexDigit(digit));
+		}
+		System.out.println(seed.toString());
+		return seed.toString();
 	}
 
 	private static class MineLocation {
@@ -537,6 +561,10 @@ public class Board {
 				merge(occupied, j - 1);
 		}
 		return field;
+	}
+
+	private static boolean[][] loadSolvableMines(int width, int height, int firstPress, int mineCount) {
+		return BruteSolver.getSolvableBoard(width, height, mineCount, firstPress / height, firstPress % height);
 	}
 
 	private static void merge(ArrayList<MineLocation> occupied, int index) {

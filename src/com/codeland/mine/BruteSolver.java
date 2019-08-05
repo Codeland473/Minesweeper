@@ -1,16 +1,43 @@
 package com.codeland.mine;
 
+import java.util.Random;
+
 public class BruteSolver {
 	private int[][] board;
 	private int[][] realBoard;
 	private int mineCount;
+	/**
+	 * 0 = no info
+	 * 1 = some info
+	 * 2 = known
+	 */
+
+	public BruteSolver() {
+		board = null;
+		realBoard = null;
+		mineCount = 0;
+	}
 
 	public BruteSolver(int[][] fullBoard, int startX, int startY) {
 		board = new int[fullBoard.length][fullBoard[0].length];
 		realBoard = fullBoard;
 		for (int i = 0; i < fullBoard.length; ++i) {
 			for (int j = 0; j < fullBoard[0].length; ++j) {
-				if (fullBoard[i][j] == 9) {
+				if (fullBoard[i][j] >= 9) {
+					++mineCount;
+				}
+				board[i][j] = -1;
+			}
+		}
+		board[startX][startY] = fullBoard[startX][startY];
+	}
+
+	public void reUse(int[][] fullBoard, int startX, int startY) {
+		board = new int[fullBoard.length][fullBoard[0].length];
+		realBoard = fullBoard;
+		for (int i = 0; i < fullBoard.length; ++i) {
+			for (int j = 0; j < fullBoard[0].length; ++j) {
+				if (fullBoard[i][j] >= 9) {
 					++mineCount;
 				}
 				board[i][j] = -1;
@@ -21,81 +48,190 @@ public class BruteSolver {
 
 	public boolean isSolvable() {
 		while (true) {
-			while (true) {
-				if (!flagMustBeMines() && !openCantBeMines()) {
-					break;
-				}
-				/*if (boardHasInconsistencies()) {
-					System.out.println("this is not supposed to happen but its happening anyway, will look into later. - C1FR1");
-				}*/
-			}
+			attemptLinnearProgress();
 			if (canFinish()) {
+				System.out.println("true");
 				return true;
 			}
-			if (!deepIsSolvable()) {
+			if (!attemptDeepProgress()) {
+				System.out.println("false");
 				return false;
 			}
 		}
 	}
 
-	private boolean deepIsSolvable() {
+	public static boolean[][] getSolvableBoard(int width, int height, int mineCount, int startX, int startY) {
+		BruteSolver b = new BruteSolver();
+		boolean[][] field;
+		int[][] board = new int[width][height];
+		while (true) {
+			field = getMines(width, height, mineCount, startX, startY);
+			setBoardFromMines(field, board);
+			b.reUse(board, startX, startY);
+			System.out.print("running isSolvable ");
+			if (b.isSolvable()) {
+				return field;
+			}
+		}
+	}
+
+	public static boolean[][] getMines(int width, int height, int mineCount, int startX, int startY) {
+		Random random = new Random();
+		boolean[][] field = new boolean[width][height];
+		for (int i = 0; i < mineCount; ++i) {
+			int index = random.nextInt(width * height);
+			if (!field[index / height][index % height] && (Math.abs(index / height - startX) > 1 || Math.abs(index % height - startY) > 1)) {
+				field[index / height][index % height] = true;
+			} else {
+				--i;
+			}
+		}
+		return field;
+	}
+
+	public static int[][] getBoardFromMines(boolean[][] mines) {
+		int[][] board = new int[mines.length][mines[0].length];
+		for (int x = 0; x < mines.length; ++x) {
+			for (int y = 0; y < mines[0].length; ++y) {
+				if (mines[x][y]) {
+					board[x][y] = 9;
+				} else {
+					for (int i = -1; i <= 1; ++i) {
+						for (int j = -1; j <= 1; ++j) {
+							if (i != j || i != 0) {
+								if (x + i >= 0 && y + j >= 0 && x + i < mines.length && y + j < mines[0].length) {
+									if (mines[x + i][y + j]) {
+										++board[x][y];
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return board;
+	}
+
+	public static int[][] setBoardFromMines(boolean[][] mines, int[][] board) {
+		for (int x = 0; x < mines.length; ++x) {
+			for (int y = 0; y < mines[0].length; ++y) {
+				if (mines[x][y]) {
+					board[x][y] = 9;
+				} else {
+					board[x][y] = 0;
+					for (int i = -1; i <= 1; ++i) {
+						for (int j = -1; j <= 1; ++j) {
+							if (i != j || i != 0) {
+								if (x + i >= 0 && y + j >= 0 && x + i < mines.length && y + j < mines[0].length) {
+									if (mines[x + i][y + j]) {
+										++board[x][y];
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return board;
+	}
+
+	private boolean attemptDeepProgress() {
 		int[][] temp = copyBoard();
 		for (int i = 0; i < board.length; ++i) {
 			for (int j = 0; j < board[0].length; ++j) {
 				if (board[i][j] == -1) {
-					boolean canBeMine = canBeMine(i, j);
-					if (!canBeMine) {
-						board[i][j] = 9;
-						canBeMine = softSolvable();
-						board = copyBoard(temp);
+					if (getBoardState(i, j) == 1) {
+						if (!deepCanBeMine(i, j, temp)) {
+							board[i][j] = realBoard[i][j];
+							return true;
+						}
+						if (!deepCanBeNotMine(i, j, temp)) {
+							board[i][j] = 9;
+							return true;
+						}
 					}
-					boolean canBeNotMine = !mustBeMine(i, j);
-					if (!canBeNotMine) {
-						board[i][j] = -2;
-						canBeNotMine = softSolvable();
-						board = copyBoard(temp);
-					}
+					/*boolean canBeMine = deepCanBeMine(i, j, temp);
+					boolean canBeNotMine = deepCanBeNotMine(i, j, temp);
 					if (canBeMine != canBeNotMine) {
 						if (canBeMine) {
 							board[i][j] = 9;
 						} else {
-							board[i][j] = 0;
+							board[i][j] = realBoard[i][j];
 						}
 						return true;
-					}
+					}*/
 				}
 			}
 		}
 		return false;
 	}
 
-	private boolean softSolvable() {
-		boolean ret = false;
-		while (true) {
-			while (true) {
-  				if (!flagMustBeMines() && !markCantBeMines()) {
-					break;
+	private boolean layoutIsPossible() {
+		attemptSafeLinnearProgress();
+		if (boardHasInconsistencies()) {
+			return false;
+		}
+		if (getRemainingMines() == 0) {
+			return true;
+		}
+		/*if (canFinish()) {
+			return true;
+		}*/
+		if (allEdgesGuessed()) {
+			if (getNoInfoCount() >= getRemainingMines()) {
+				if (allNumbersAreSatisfied()) {
+					return true;
 				} else {
-					ret = true;
+					return false;
 				}
-			}
-			if (boardHasInconsistencies()) {
+			} else {
 				return false;
 			}
-			if (canFinish()) {
-				return true;
-				//ret = true;
+		}
+		int[][] temp = copyBoard();
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (board[i][j] == -1) {
+					if (getBoardState(i, j) == 1) {
+						if (deepCanBeMine(i, j, temp)) {
+							return true;
+						}
+						if (deepCanBeNotMine(i, j, temp)) {
+							return true;
+						}
+						return false;
+					}
+				}
 			}
-			if (!deepIsSolvable()) {
+		}
+		System.out.println("something is wrong");
+		return false;
+	}
+
+	private boolean attemptLinnearProgress() {
+		boolean ret = false;
+		while (true) {
+			if (!flagMustBeMines() && !openCantBeMines()) {
 				break;
 			} else {
 				ret = true;
 			}
 		}
-		if (boardHasInconsistencies()) {
-			return false;
+		return false;
+	}
+
+	private boolean attemptSafeLinnearProgress() {
+		boolean ret = false;
+		while (true) {
+			if (!markMustBeMines() && !markCantBeMines()) {
+				break;
+			} else {
+				ret = true;
+			}
 		}
-		return ret;
+		return false;
 	}
 
 	private boolean flagMustBeMines() {
@@ -106,6 +242,23 @@ public class BruteSolver {
 					if (canBeMine(i, j)) {
 						if (mustBeMine(i, j)) {
 							board[i][j] = 9;
+							ret = true;
+						}
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
+	private boolean markMustBeMines() {
+		boolean ret = false;
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (board[i][j] == -1) {
+					if (canBeMine(i, j)) {
+						if (mustBeMine(i, j)) {
+							board[i][j] = 10;
 							ret = true;
 						}
 					}
@@ -152,7 +305,7 @@ public class BruteSolver {
 				int val = board[i][j];
 				if (val >= 0 && val <= 8) {
 					int remainingMineNeighbors = remainingMineNeighbors(i, j);
-					if (remainingMineSpaces(i, j) < 0 || remainingMineNeighbors < remainingMineSpaces(i, j) || remainingMines < remainingMineNeighbors) {
+					if (remainingMineSpaces(i, j) < 0 || remainingMineNeighbors > remainingMineSpaces(i, j) || remainingMines < remainingMineNeighbors) {
 						return true;
 					}
 				}
@@ -178,6 +331,48 @@ public class BruteSolver {
 			}
 		}
 		return true;
+	}
+
+	private boolean deepCanBeMine(int x, int y, int[][] temp) {
+		boolean ret = canBeMine(x, y);
+		if (ret) {
+			board[x][y] = 10;
+			ret = layoutIsPossible();
+			board = copyBoard(temp);
+		}
+		return ret;
+	}
+
+	private boolean deepCanBeMine(int x, int y) {
+		boolean ret = canBeMine(x, y);
+		if (ret) {
+			int[][] temp = copyBoard();
+			board[x][y] = 10;
+			ret = layoutIsPossible();
+			board = copyBoard(temp);
+		}
+		return ret;
+	}
+
+	private boolean deepCanBeNotMine(int x, int y, int[][] temp) {
+		boolean ret = !mustBeMine(x, y);
+		if (ret) {
+			board[x][y] = -2;
+			ret = layoutIsPossible();
+			board = copyBoard(temp);
+		}
+		return ret;
+	}
+
+	private boolean deepCanBeNotMine(int x, int y) {
+		boolean ret = !mustBeMine(x, y);
+		if (ret) {
+			int[][] temp = copyBoard();
+			board[x][y] = -2;
+			ret = layoutIsPossible();
+			board = copyBoard(temp);
+		}
+		return ret;
 	}
 
 	private boolean mustBeMine(int x, int y) {
@@ -208,7 +403,7 @@ public class BruteSolver {
 				if (x + i >= 0 && x + i < board.length) {
 					if (y + j >= 0 && y + j < board[0].length) {
 						if (!(i == j && i == 0)) {
-							if (board[x + i][y + j] == 9) {
+							if (board[x + i][y + j] >= 9) {
 								--ret;
 							}
 						}
@@ -260,7 +455,7 @@ public class BruteSolver {
 		int ret = mineCount;
 		for (int i = 0; i < board.length; ++i) {
 			for (int j = 0; j < board[0].length; ++j) {
-				if (board[i][j] == 9) {
+				if (board[i][j] >= 9) {
 					--ret;
 				}
 			}
@@ -277,6 +472,7 @@ public class BruteSolver {
 		}
 		return ret;
 	}
+
 	public static int[][] copyBoard(int[][] board) {
 		int[][] ret =  new int[board.length][board[0].length];
 		for (int i = 0; i < board.length; ++i) {
@@ -285,5 +481,62 @@ public class BruteSolver {
 			}
 		}
 		return ret;
+	}
+
+	private int getBoardState(int x, int y) {
+		if (board[x][y] >= 0 && board[x][y] <= 9) {
+			return 2;
+		}
+		for (int i = -1; i <= 1; ++i) {
+			for (int j = -1; j <= 1; ++j) {
+				if (x + i >= 0 && x + i < board.length) {
+					if (y + j >= 0 && y + j < board[0].length) {
+						if (!(i == j && i == 0)) {
+							if (board[x + i][y + j] >= 0 && board[x + i][y + j] < 9) {
+								return 1;
+							}
+						}
+					}
+				}
+			}
+		}
+		return 0;
+	}
+
+	private int getNoInfoCount() {
+		int ret = 0;
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (getBoardState(i, j) == 0) {
+					++ret;
+				}
+			}
+		}
+		return ret;
+	}
+
+	private boolean allEdgesGuessed() {
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				int boardState = getBoardState(i, j);
+				if (boardState == 1 && board[i][j] > -2 && board[i][j] < 10) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private boolean allNumbersAreSatisfied() {
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (board[i][j] >= 0 && board[i][j] < 9) {
+					if (remainingMineNeighbors(i, j) != 0) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 }
