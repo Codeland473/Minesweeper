@@ -18,6 +18,11 @@ public class BruteSolver {
 		mineCount = 0;
 	}
 
+	public static boolean isSolvable(boolean[][] field, int startX, int startY) {
+		BruteSolver b = new BruteSolver(getBoardFromMines(field), startX, startY);
+		return b.isSolvable();
+	}
+
 	public BruteSolver(int[][] fullBoard, int startX, int startY) {
 		board = new int[fullBoard.length][fullBoard[0].length];
 		realBoard = fullBoard;
@@ -61,15 +66,14 @@ public class BruteSolver {
 	}
 
 	public static boolean[][] getSolvableBoard(int width, int height, int mineCount, int startX, int startY) {
-		BruteSolver b = new BruteSolver();
 		boolean[][] field;
-		int[][] board = new int[width][height];
 		while (true) {
 			field = getMines(width, height, mineCount, startX, startY);
-			setBoardFromMines(field, board);
-			b.reUse(board, startX, startY);
+			//setBoardFromMines(field, board);
+			//b.reUse(board, startX, startY);
+			Board.calculateSeed(width, height, startX * height + startY, field);
 			System.out.print("running isSolvable ");
-			if (b.isSolvable()) {
+			if (isSolvable(field, startX, startY)) {
 				return field;
 			}
 		}

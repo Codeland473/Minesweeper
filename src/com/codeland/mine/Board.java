@@ -449,8 +449,7 @@ public class Board {
 		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
 		calculateSeed(width(), height(), firstPress);
 
-		BruteSolver solver = new BruteSolver(mineBoard, firstPress / height(), firstPress % height());
-		System.out.println("canBeSolved " + solver.isSolvable());
+		System.out.println("isSolvable " + BruteSolver.isSolvable(mines, firstPress / height(), firstPress % height()));
 	}
 
 	private void determineNeighbors() {
@@ -490,7 +489,7 @@ public class Board {
 		this.seed = seed.toString();
 	}
 
-	private static String calculateSeed(int width, int height, int firstPress, boolean[][] field) {
+	public static String calculateSeed(int width, int height, int firstPress, boolean[][] field) {
 		int length = width * height;
 		int digit;
 		StringBuilder seed = new StringBuilder();
