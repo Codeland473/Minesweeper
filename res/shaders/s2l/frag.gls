@@ -1,0 +1,19 @@
+#version 330 core
+
+uniform sampler2D background;
+uniform sampler2D foreground;
+uniform float percent;
+
+in vec2 texCoords;
+
+out vec4 color;
+
+void main() {
+    if (texCoords.y < percent)
+        color = texture(background, texCoords);
+    else
+        color = texture(foreground, texCoords);
+
+    if (color.a == 0)
+        discard;
+}

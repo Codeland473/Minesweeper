@@ -28,6 +28,8 @@ package com.gnarly.engine.texture;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -127,6 +129,12 @@ public class Texture {
 	}
 	
 	public void bind() {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, id);
+	}
+
+	public void bind(int activeTexture) {
+		glActiveTexture(GL_TEXTURE0 + activeTexture);
 		glBindTexture(GL_TEXTURE_2D, id);
 	}
 	

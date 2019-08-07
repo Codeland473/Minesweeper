@@ -55,6 +55,7 @@ public abstract class Shader {
 
 	public static Shader2c SHADER2C;
 	public static Shader2t SHADER2T;
+	public static Shader2l SHADER2L;
 	
 	protected int program;
 	
@@ -119,7 +120,8 @@ public abstract class Shader {
 	}
 	
 	public static void init() {
-		SHADER2C  = new Shader2c();
-		SHADER2T  = new Shader2t();
+		SHADER2C = new Shader2c();
+		SHADER2T = new Shader2t();
+		SHADER2L = new Shader2l();
 	}
 }

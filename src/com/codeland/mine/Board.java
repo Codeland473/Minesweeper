@@ -94,10 +94,13 @@ public class Board {
 	private int mineCount;
 	private String seed;
 
-	public Board() {
+	private SolvableBoardGenerator generator;
+
+	public Board(SolvableBoardGenerator generator) {
 		pressX = -1;
 		pressY = -1;
 		flagged = 0;
+		this.generator = generator;
 	}
 
 	/**
@@ -441,15 +444,7 @@ public class Board {
 	 * Load the board
 	 */
 	public void load(int firstPress) {
-		boolean[][] mines = BruteSolver.getSolvable(width(), height(), mineCount, firstPress / height(), firstPress % height());
-		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
-		determineNeighbors();
-
-		int[][] mineBoard = new int[width()][height()];
-		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
-		calculateSeed(width(), height(), firstPress);
-
-		System.out.println("isSolvable " + BruteSolver.isSolvable(mines, firstPress / height(), firstPress % height()));
+		generator.prepare(width(), height(), mineCount, firstPress / height(), firstPress % height());
 	}
 
 	private void determineNeighbors() {
@@ -508,7 +503,6 @@ public class Board {
 			}
 			seed.append(hexDigit(digit));
 		}
-		System.out.println(seed.toString());
 		return seed.toString();
 	}
 
@@ -560,6 +554,16 @@ public class Board {
 				merge(occupied, j - 1);
 		}
 		return field;
+	}
+
+	private void set() {
+		boolean[][] mines = generator.getCompletedField();
+		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
+		determineNeighbors();
+
+		int[][] mineBoard = new int[width()][height()];
+		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
+		calculateSeed(width(), height(), generator.getFirstPress());
 	}
 
 	private static void merge(ArrayList<MineLocation> occupied, int index) {

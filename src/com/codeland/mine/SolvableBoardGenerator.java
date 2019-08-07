@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class SolvableBoardGenerator implements Runnable {
 	private float progress = 0;
-	private boolean completed = false;
+	private boolean completed = true;
 	private boolean[][] field;
 
 	private int startX;
@@ -14,15 +14,20 @@ public class SolvableBoardGenerator implements Runnable {
 	private int[][] realBoard;
 	private int mineCount;
 
+	private boolean prepared = false;
+
 	public void prepare(int width, int height, int mines, int startingX, int startingY) {
 		field = new boolean[width][height];
 		startX = startingX;
 		startY = startingY;
 		mineCount = mines;
+		prepared = true;
 	}
 
 	@Override
 	public void run() {
+		prepared = false;
+		completed = false;
 		getNewMines();
 		updateRealBoard();
 		while (true) {
@@ -550,5 +555,13 @@ public class SolvableBoardGenerator implements Runnable {
 			}
 		}
 		return ret;
+	}
+
+	public int getFirstPress() {
+		return startX * height() + startY;
+	}
+
+	public boolean isPrepared() {
+		return prepared;
 	}
 }

@@ -71,6 +71,10 @@ public class Panel {
 	private ToggleButton exceedHighlighting;
 	private ToggleButton zeroBoxHighlighting;
 
+	private LoadingBar loadingBar;
+	private Thread loading;
+	private SolvableBoardGenerator generator;
+
 	private int highlightEqual;
 	private int highlightExceed;
 	private int highlightZero;
@@ -81,10 +85,11 @@ public class Panel {
 		this.window = window;
 		this.camera = camera;
 
-		board = new Board();
-		board.reset(30, 16, 170);
-
 		status = STATUS_PLAYING;
+
+		generator = new SolvableBoardGenerator();
+		board = new Board(generator);
+		board.reset(30, 16, 170);
 
 		tileDim = Math.min(
 			camera.getWidth()  / (board.width()  + 2),
@@ -122,6 +127,8 @@ public class Panel {
 		equalHighlighting   = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_GREEN, STATE_ON);
 		exceedHighlighting  = new ToggleButton(window, camera, camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim, COLOR_RED,   STATE_ON);
 		zeroBoxHighlighting = new ToggleButton(window, camera, camera.getWidth() - tileDim * 5.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim, COLOR_WHITE, STATE_OFF);
+
+		loadingBar = new LoadingBar(camera, tileDim * 1.5f, upOffset - tileDim * 3.5f, tileDim * 2, tileDim * 2);
 	}
 
 	public void update() {
@@ -132,8 +139,8 @@ public class Panel {
 
 			// Get the largest tile dimension that will allow the entire board to fit within the window
 			tileDim = Math.min(
-				camera.getWidth() / (board.width() + 2),
-				camera.getHeight() / (board.height() + 6)
+					camera.getWidth() / (board.width() + 2),
+					camera.getHeight() / (board.height() + 6)
 			);
 
 			// Calculate the render offsets from the top and bottom of the window
@@ -142,10 +149,10 @@ public class Panel {
 
 			// Reset all the tile dimensions
 			unpressed.setDims(tileDim, tileDim);
-			  flagged.setDims(tileDim, tileDim);
+			flagged.setDims(tileDim, tileDim);
 			depressed.setDims(tileDim, tileDim);
-			     dead.setDims(tileDim, tileDim);
-			      win.setDims(tileDim, tileDim);
+			dead.setDims(tileDim, tileDim);
+			win.setDims(tileDim, tileDim);
 
 			for (int i = 0; i < backs.length; ++i)
 				backs[i].setDims(tileDim, tileDim);
@@ -157,63 +164,75 @@ public class Panel {
 			inner.set(leftOffset - tileDim / 2, upOffset - tileDim / 2, board.width() * tileDim + tileDim, board.height() * tileDim + tileDim, tileDim / 2);
 
 			topBar.set(tileDim / 2, upOffset - tileDim * 4.5f, camera.getWidth() - tileDim, tileDim * 4, tileDim / 2);
-			resetButton.set( (camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
-			equalHighlighting.set(  camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
-			exceedHighlighting.set( camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim);
+			resetButton.set((camera.getWidth() - tileDim * 3) / 2, upOffset - tileDim * 4, tileDim * 3, tileDim * 3);
+			equalHighlighting.set(camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
+			exceedHighlighting.set(camera.getWidth() - tileDim * 3.3333333f, upOffset - tileDim * 2.3333333f, tileDim * 2, tileDim);
 			zeroBoxHighlighting.set(camera.getWidth() - tileDim * 5.6666666f, upOffset - tileDim * 3.6666666f, tileDim * 2, tileDim);
+
+			loadingBar.set(tileDim * 1.5f, upOffset - tileDim * 3.5f, tileDim * 2, tileDim * 2);
 		}
 
-		if (status == STATUS_PLAYING) {
-			// If the left mouse button is pressed...
-			if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
-				// Trigger a depress action on the square that was clicked
-				checkBoardPress(false, board::depress);
-			// If the left mouse button was released this frame...
-			else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED)
-				// Trigger a release action on the square that was clicked
-				checkBoardPress(true, board::release);
-			// If the right mouse button was pressed this frame...
-			else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED)
-				// Trigger a flag action on the square that was clicked
-				checkBoardPress(false, board::flag);
+		if (generator.isPrepared()) {
+			loading = new Thread(generator);
+			loading.run();
 		}
+		if (generator.fieldIsCompleted()) {
+			if (status == STATUS_PLAYING) {
+				// If the left mouse button is pressed...
+				if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
+					// Trigger a depress action on the square that was clicked
+					checkBoardPress(false, board::depress);
+					// If the left mouse button was released this frame...
+				else if (window.mousePressed(GLFW_MOUSE_BUTTON_1) == Window.BUTTON_RELEASED)
+					// Trigger a release action on the square that was clicked
+					checkBoardPress(true, board::release);
+					// If the right mouse button was pressed this frame...
+				else if (window.mousePressed(GLFW_MOUSE_BUTTON_2) == Window.BUTTON_PRESSED)
+					// Trigger a flag action on the square that was clicked
+					checkBoardPress(false, board::flag);
+			}
 
-		resetButton.update();
-		if (resetButton.getState() == BUTTON_STATE_RELEASED) {
-			board.reset(30, 16, 170);
-			//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
+			resetButton.update();
+			if (resetButton.getState() == BUTTON_STATE_RELEASED) {
+				board.reset(30, 16, 170);
+				//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
+			}
+			equalHighlighting.update();
+			highlightEqual = equalHighlighting.getState();
+
+			exceedHighlighting.update();
+			highlightExceed = exceedHighlighting.getState();
+
+			zeroBoxHighlighting.update();
+			highlightZero = zeroBoxHighlighting.getState();
+
+			status = board.checkStatus();
+
+			switch (status) {
+				case STATUS_LOSE:
+					resetButton.setFace(FACE_STATE_DEAD);
+					break;
+				case STATUS_WIN:
+					resetButton.setFace(FACE_STATE_WIN);
+					break;
+				case STATUS_PLAYING:
+					if (board.depressed())
+						resetButton.setFace(FACE_STATE_TENSE);
+					else
+						resetButton.setFace(FACE_STATE_ALIVE);
+					break;
+			}
 		}
-		equalHighlighting.update();
-		highlightEqual = equalHighlighting.getState();
-
-		exceedHighlighting.update();
-		highlightExceed = exceedHighlighting.getState();
-
-		zeroBoxHighlighting.update();
-		highlightZero = zeroBoxHighlighting.getState();
-
-		status = board.checkStatus();
-
-		switch (status) {
-			case STATUS_LOSE:
-				resetButton.setFace(FACE_STATE_DEAD);
-				break;
-			case STATUS_WIN:
-				resetButton.setFace(FACE_STATE_WIN);
-				break;
-			case STATUS_PLAYING:
-				if (board.depressed())
-					resetButton.setFace(FACE_STATE_TENSE);
-				else
-					resetButton.setFace(FACE_STATE_ALIVE);
-				break;
-		}
+		else
+			loadingBar.setPercent(generator.getProgress());
 	}
 
 	/**
 	 * Renders the board centered in the window
 	 */
 	public void render() {
+		if (!generator.fieldIsCompleted())
+			loadingBar.render();
 		resetButton.render();
 		equalHighlighting.render();
 		exceedHighlighting.render();
