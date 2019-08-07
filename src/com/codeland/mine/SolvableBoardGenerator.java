@@ -1,7 +1,7 @@
 package com.codeland.mine;
 
 public class SolvableBoardGenerator implements Runnable {
-	public float progress = 0;
+	private float progress = 0;
 	private boolean completed = false;
 	private boolean[][] field;
 
@@ -20,6 +20,10 @@ public class SolvableBoardGenerator implements Runnable {
 	public void run() {
 
 		completed = true;
+	}
+
+	public float getProgress() {
+		return progress;
 	}
 
 	public boolean fieldIsCompleted() {
