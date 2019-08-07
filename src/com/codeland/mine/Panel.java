@@ -82,7 +82,7 @@ public class Panel {
 		this.camera = camera;
 
 		board = new Board();
-		board.reset(15, 8, 25);
+		board.reset(30, 16, 170);
 
 		status = STATUS_PLAYING;
 
@@ -180,7 +180,7 @@ public class Panel {
 
 		resetButton.update();
 		if (resetButton.getState() == BUTTON_STATE_RELEASED) {
-			board.reset(15, 8, 43);
+			board.reset(30, 16, 170);
 			//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
 		}
 		equalHighlighting.update();

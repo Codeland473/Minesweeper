@@ -23,6 +23,105 @@ public class BruteSolver {
 		return b.isSolvable();
 	}
 
+	public static boolean[][] getSolvable(int width, int height, int mines, int startX, int startY) {
+		boolean[][] field = getMines(width, height, mines, startX, startY);
+		BruteSolver b = new BruteSolver(getBoardFromMines(field), startX, startY);
+		int tempMines = 0;
+		int prevTempMines = 0;
+		int numRepetitions = 0;
+		while (!b.isSolvable()) {
+			tempMines = 0;
+			if (b.isBoxedOut()) {
+				for (int i = 0; i < width; ++i) {
+					for (int j = 0; j < height; ++j) {
+						if (b.board[i][j] < 0 || b.board[i][j] > 9 || (field[i][j] && b.boardersUnknown(i, j))) {
+							if (field[i][j]) {
+								b.board[i][j] = 10;
+								field[i][j] = false;
+								++tempMines;
+							}
+						}
+					}
+				}
+			} else {
+				for (int i = 0; i < width; ++i) {
+					for (int j = 0; j < height; ++j) {
+						if (b.board[i][j] < 0 || b.board[i][j] > 9) {
+							if (field[i][j]) {
+								field[i][j] = false;
+								++tempMines;
+							}
+						}
+					}
+				}
+			}
+			if (tempMines == prevTempMines) {
+				++numRepetitions;
+				if (numRepetitions >= 20 + tempMines) {
+					return getSolvable(width, height, mines, startX, startY);
+				}
+			} else {
+				prevTempMines = tempMines;
+				numRepetitions = 0;
+			}
+			System.out.println(tempMines);
+			if (tempMines == 0) {
+				break;
+			}
+			for (int i = 0; i < tempMines; ++i) {
+				int x = (int) (Math.random() * width);
+				int y = (int) (Math.random() * height);
+				if (b.board[x][y] < 0 || b.board[x][y] > 9) {
+					if (!field[x][y]) {
+						field[x][y] = true;
+					} else {
+						--i;
+					}
+				} else {
+					--i;
+				}
+			}
+
+			b = new BruteSolver(getBoardFromMines(field), startX, startY);
+		}
+		tempMines = 0;
+		for (int i = 0; i < width; ++i) {
+			for (int j = 0; j < height; ++j) {
+				if (field[i][j]) {
+					++tempMines;
+				}
+			}
+		}
+		System.out.println(tempMines);
+		return field;
+	}
+
+	private boolean isBoxedOut() {
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (board[i][j] >= 0 && board[i][j] < 9) {
+					if (boardersUnknown(i, j)) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	public boolean boardersUnknown(int x, int y) {
+		for (int di = -1; di <= 1; ++di) {
+			for (int dj = -1; dj <= 1; ++dj) {
+				if (x + di > 0 && y + dj > 0 && x + di < board.length && y + dj < board[0].length) {
+					if (board[x + di][y + dj] == -1) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	public BruteSolver(int[][] fullBoard, int startX, int startY) {
 		board = new int[fullBoard.length][fullBoard[0].length];
 		realBoard = fullBoard;
@@ -61,20 +160,6 @@ public class BruteSolver {
 			if (!attemptDeepProgress()) {
 				System.out.println("false");
 				return false;
-			}
-		}
-	}
-
-	public static boolean[][] getSolvableBoard(int width, int height, int mineCount, int startX, int startY) {
-		boolean[][] field;
-		while (true) {
-			field = getMines(width, height, mineCount, startX, startY);
-			//setBoardFromMines(field, board);
-			//b.reUse(board, startX, startY);
-			Board.calculateSeed(width, height, startX * height + startY, field);
-			System.out.print("running isSolvable ");
-			if (isSolvable(field, startX, startY)) {
-				return field;
 			}
 		}
 	}

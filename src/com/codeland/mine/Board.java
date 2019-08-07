@@ -441,7 +441,7 @@ public class Board {
 	 * Load the board
 	 */
 	public void load(int firstPress) {
-		boolean[][] mines = BruteSolver.getSolvableBoard(width(), height(), mineCount, firstPress / height(), firstPress % height());
+		boolean[][] mines = BruteSolver.getSolvable(width(), height(), mineCount, firstPress / height(), firstPress % height());
 		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
 		determineNeighbors();
 
@@ -560,10 +560,6 @@ public class Board {
 				merge(occupied, j - 1);
 		}
 		return field;
-	}
-
-	private static boolean[][] loadSolvableMines(int width, int height, int firstPress, int mineCount) {
-		return BruteSolver.getSolvableBoard(width, height, mineCount, firstPress / height, firstPress % height);
 	}
 
 	private static void merge(ArrayList<MineLocation> occupied, int index) {
