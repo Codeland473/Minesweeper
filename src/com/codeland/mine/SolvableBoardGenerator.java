@@ -18,6 +18,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	public void prepare(int width, int height, int mines, int startingX, int startingY) {
 		field = new boolean[width][height];
+		realBoard = new int[width][height];
+		board = new int[width][height];
 		startX = startingX;
 		startY = startingY;
 		mineCount = mines;
@@ -209,16 +211,6 @@ public class SolvableBoardGenerator implements Runnable {
 							return true;
 						}
 					}
-					/*boolean canBeMine = deepCanBeMine(i, j, temp);
-					boolean canBeNotMine = deepCanBeNotMine(i, j, temp);
-					if (canBeMine != canBeNotMine) {
-						if (canBeMine) {
-							board[i][j] = 9;
-						} else {
-							board[i][j] = realBoard[i][j];
-						}
-						return true;
-					}*/
 				}
 			}
 		}
@@ -505,7 +497,7 @@ public class SolvableBoardGenerator implements Runnable {
 						y + j > 0 &&
 						x + i < width() &&
 						y + j < height()) {
-					if (field[x + i][x + j]) {
+					if (field[x + i][y + j]) {
 						++ret;
 					}
 				}
