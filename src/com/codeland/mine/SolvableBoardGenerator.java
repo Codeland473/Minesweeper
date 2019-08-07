@@ -120,8 +120,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	private boolean doLinearPass() {
 		boolean ret = false;
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] == -1) {
 					if (!canBeMine(i, j)) {
 						board[i][j] = realBoard[i][j];
@@ -140,8 +140,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	private boolean doSafeLinearPass() {
 		boolean ret = false;
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] == -1) {
 					if (!canBeMine(i, j)) {
 						board[i][j] = -2;
@@ -163,8 +163,8 @@ public class SolvableBoardGenerator implements Runnable {
 			return true;
 		}
 		int remainingOpen = 0;
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] == -1) {
 					++remainingOpen;
 				}
@@ -175,8 +175,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	private boolean boardHasInconsistencies() {
 		int remainingMines = getRemainingMines();
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				int val = board[i][j];
 				if (val >= 0 && val <= 8) {
 					int remainingMineNeighbors = remainingMineNeighbors(i, j);
@@ -191,8 +191,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	private boolean attemptDeepProgress() {
 		int[][] temp = copyBoard();
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] == -1) {
 					if (getBoardState(i, j) == 1) {
 						if (!deepCanBeMine(i, j, temp)) {
@@ -240,8 +240,8 @@ public class SolvableBoardGenerator implements Runnable {
 			}
 		}
 		int[][] temp = copyBoard();
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] == -1) {
 					if (getBoardState(i, j) == 1) {
 						if (deepCanBeMine(i, j, temp)) {
@@ -261,12 +261,10 @@ public class SolvableBoardGenerator implements Runnable {
 
 
 
-
-
 	private int getNoInfoCount() {
 		int ret = 0;
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (getBoardState(i, j) == 0) {
 					++ret;
 				}
@@ -276,8 +274,8 @@ public class SolvableBoardGenerator implements Runnable {
 	}
 
 	private boolean allNumbersAreSatisfied() {
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] >= 0 && board[i][j] < 9) {
 					if (remainingMineNeighbors(i, j) != 0) {
 						return false;
@@ -289,8 +287,8 @@ public class SolvableBoardGenerator implements Runnable {
 	}
 
 	private boolean allEdgesGuessed() {
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				int boardState = getBoardState(i, j);
 				if (boardState == 1 && board[i][j] > -2 && board[i][j] < 10) {
 					return false;
@@ -306,8 +304,8 @@ public class SolvableBoardGenerator implements Runnable {
 		}
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
-				if (x + i >= 0 && x + i < board.length) {
-					if (y + j >= 0 && y + j < board[0].length) {
+				if (x + i >= 0 && x + i < width()) {
+					if (y + j >= 0 && y + j < height()) {
 						if (!(i == j && i == 0)) {
 							if (board[x + i][y + j] >= 0 && board[x + i][y + j] < 9) {
 								return 1;
@@ -323,8 +321,8 @@ public class SolvableBoardGenerator implements Runnable {
 	private boolean canBeMine(int x, int y) {
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
-				if (x + i >= 0 && x + i < board.length) {
-					if (y + j >= 0 && y + j < board[0].length) {
+				if (x + i >= 0 && x + i < width()) {
+					if (y + j >= 0 && y + j < height()) {
 						if (!(i == j && i == 0)) {
 							if (board[x + i][y + j] != -1) {
 								if (remainingMineNeighbors(x + i, y + j) == 0) {
@@ -352,8 +350,8 @@ public class SolvableBoardGenerator implements Runnable {
 	private boolean mustBeMine(int x, int y) {
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
-				if (x + i >= 0 && x + i < board.length) {
-					if (y + j >= 0 && y + j < board[0].length) {
+				if (x + i >= 0 && x + i < width()) {
+					if (y + j >= 0 && y + j < height()) {
 						if (!(i == j && i == 0)) {
 							if (board[x + i][y + j] >= 0 && board[x + i][y + j] < 9) {
 								int neighbors = remainingMineNeighbors(x + i, y + j);
@@ -384,8 +382,8 @@ public class SolvableBoardGenerator implements Runnable {
 		int ret = 8;
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
-				if (x + i >= 0 && x + i < board.length) {
-					if (y + j >= 0 && y + j < board[0].length) {
+				if (x + i >= 0 && x + i < width()) {
+					if (y + j >= 0 && y + j < height()) {
 						if (!(i == j && i == 0)) {
 							if (board[x + i][y + j] != -1) {
 								--ret;
@@ -406,8 +404,8 @@ public class SolvableBoardGenerator implements Runnable {
 		int ret = board[x][y];
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
-				if (x + i >= 0 && x + i < board.length) {
-					if (y + j >= 0 && y + j < board[0].length) {
+				if (x + i >= 0 && x + i < width()) {
+					if (y + j >= 0 && y + j < height()) {
 						if (!(i == j && i == 0)) {
 							if (board[x + i][y + j] >= 9) {
 								--ret;
@@ -422,8 +420,8 @@ public class SolvableBoardGenerator implements Runnable {
 
 	private int getRemainingMines() {
 		int ret = mineCount;
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				if (board[i][j] >= 9) {
 					--ret;
 				}
@@ -435,7 +433,7 @@ public class SolvableBoardGenerator implements Runnable {
 	private boolean boardersUnknown(int x, int y) {
 		for (int di = -1; di <= 1; ++di) {
 			for (int dj = -1; dj <= 1; ++dj) {
-				if (x + di > 0 && y + dj > 0 && x + di < board.length && y + dj < board[0].length) {
+				if (x + di > 0 && y + dj > 0 && x + di < width() && y + dj < height()) {
 					if (board[x + di][y + dj] == -1) {
 						return true;
 					}
@@ -459,12 +457,10 @@ public class SolvableBoardGenerator implements Runnable {
 
 
 
-
-
 	private int[][] copyBoard() {
-		int[][] ret =  new int[board.length][board[0].length];
-		for (int i = 0; i < board.length; ++i) {
-			for (int j = 0; j < board[0].length; ++j) {
+		int[][] ret =  new int[width()][height()];
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
 				ret[i][j] = board[i][j];
 			}
 		}
@@ -520,9 +516,6 @@ public class SolvableBoardGenerator implements Runnable {
 	private int height() {
 		return field[0].length;
 	}
-
-
-
 
 
 
