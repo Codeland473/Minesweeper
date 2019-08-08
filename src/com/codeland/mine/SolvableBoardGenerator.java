@@ -23,6 +23,7 @@ public class SolvableBoardGenerator implements Runnable {
 		startX = startingX;
 		startY = startingY;
 		mineCount = mines;
+		completed = false;
 		prepared = true;
 	}
 
@@ -32,6 +33,7 @@ public class SolvableBoardGenerator implements Runnable {
 		completed = false;
 		getNewMines();
 		updateRealBoard();
+		resetGuessBoard();
 		while (true) {
 			progress = (float) getKnownCount() / (float) (width() * height());
 			attemptLinearProgress();
@@ -42,6 +44,10 @@ public class SolvableBoardGenerator implements Runnable {
 				//current layout is impossible, re-organize
 				redistribute();
 				updateRealBoard();
+				board[startX][startY] = realBoard[startX][startY];
+				/*getNewMines();
+				updateRealBoard();
+				resetGuessBoard();*/
 			}
 		}
 		completed = true;
@@ -51,12 +57,10 @@ public class SolvableBoardGenerator implements Runnable {
 		int ret = 0;
 		for (int i = 0; i < width(); ++i) {
 			for (int j = 0; j < height(); ++j) {
-				if (board[i][j] < 0 || board[i][j] > 9 || (field[i][j] && boardersUnknown(i, j))) {
+				if (field[i][j] && boardersUnknown(i, j)) {
 					board[i][j] = 12;
-					if (field[i][j]) {
-						field[i][j] = false;
-						++ret;
-					}
+					field[i][j] = false;
+					++ret;
 				}
 			}
 		}
@@ -69,15 +73,15 @@ public class SolvableBoardGenerator implements Runnable {
 		}
 		for (int i = 0; i < width(); ++i) {
 			for (int j = 0; j < height(); ++j) {
-				if (board[i][j] < 0 || board[i][j] > 9 || (field[i][j] && boardersUnknown(i, j))) {
+				if (boardersUnknown(i, j) && board[i][j] != -1) {
 					board[i][j] = 12;
 				}
 			}
 		}
 		for (int i = 0; i < width(); ++i) {
 			for (int j = 0; j < height(); ++j) {
-				if (board[i][j] == 12) {
-					board[i][j] = -1;
+				if (boardersNumber(i, j, 12) && board[i][j] != -1) {
+					board[i][j] = 12;
 				}
 			}
 		}
@@ -89,10 +93,18 @@ public class SolvableBoardGenerator implements Runnable {
 			int x = (int) (Math.random() * width());
 			int y = (int) (Math.random() * height());
 			if ((board[x][y] < 0 || board[x][y] > 9) &&
-					!field[x][y]) {
+					!field[x][y] &&
+					board[x][y] != 12) {
 				field[x][y] = true;
 			} else {
 				--i;
+			}
+		}
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
+				if (board[i][j] == 12) {
+					board[i][j] = -1;
+				}
 			}
 		}
 	}
@@ -430,8 +442,21 @@ public class SolvableBoardGenerator implements Runnable {
 	private boolean boardersUnknown(int x, int y) {
 		for (int di = -1; di <= 1; ++di) {
 			for (int dj = -1; dj <= 1; ++dj) {
-				if (x + di > 0 && y + dj > 0 && x + di < width() && y + dj < height()) {
+				if (x + di >= 0 && y + dj >= 0 && x + di < width() && y + dj < height()) {
 					if (board[x + di][y + dj] == -1) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean boardersNumber(int x, int y, int number) {
+		for (int di = -1; di <= 1; ++di) {
+			for (int dj = -1; dj <= 1; ++dj) {
+				if (x + di >= 0 && y + dj >= 0 && x + di < width() && y + dj < height()) {
+					if (board[x + di][y + dj] == number) {
 						return true;
 					}
 				}
@@ -465,6 +490,11 @@ public class SolvableBoardGenerator implements Runnable {
 	}
 
 	private void getNewMines() {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
+				field[i][j] = false;
+			}
+		}
 		Random random = new Random();
 		for (int i = 0; i < mineCount; ++i) {
 			int index = random.nextInt(width() * height());
@@ -488,13 +518,22 @@ public class SolvableBoardGenerator implements Runnable {
 		}
 	}
 
+	private void resetGuessBoard() {
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
+				board[i][j] = -1;
+			}
+		}
+		board[startX][startY] = realBoard[startX][startY];
+	}
+
 	private int realNeighboringMines(int x, int y) {
 		int ret = 0;
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
 				if ((j != i || j != 0) &&
-						x + i > 0 &&
-						y + j > 0 &&
+						x + i >= 0 &&
+						y + j >= 0 &&
 						x + i < width() &&
 						y + j < height()) {
 					if (field[x + i][y + j]) {
@@ -548,5 +587,9 @@ public class SolvableBoardGenerator implements Runnable {
 
 	public boolean isPrepared() {
 		return prepared;
+	}
+
+	public void reset() {
+		field = null;
 	}
 }

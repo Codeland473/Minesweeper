@@ -129,28 +129,30 @@ public class Board {
 	 */
 	private void press(int x, int y) {
 		// Set the state of the pressed tile to pressed
-		board[x][y].state = STATE_PRESSED;
-		if (seed == null)
+		if (seed == null) {
 			load(x * height() + y);
-		// If the tile had no adjacent mines and wasn't
-		// a mine itself press all of it's neighbors as well
-		if (board[x][y].mines == 0)
-			bucketClear(x, y, board);
-		if (board[x][y].mines == MINE) {
-			status = STATUS_LOSE;
-			iterate((nx, ny, board) -> board[nx][ny].state = STATE_PRESSED);
-			board[x][y].state = STATE_DEAD;
 		} else {
-			status = STATUS_WIN;
-			iterate((nx, ny, board) -> {
-				if (board[nx][ny].state == STATE_UNPRESSED && board[nx][ny].mines != MINE)
-					status = STATUS_PLAYING;
-			});
-			if (status == STATUS_WIN) {
+			board[x][y].state = STATE_PRESSED;
+			// If the tile had no adjacent mines and wasn't
+			// a mine itself press all of it's neighbors as well
+			if (board[x][y].mines == 0)
+				bucketClear(x, y, board);
+			if (board[x][y].mines == MINE) {
+				status = STATUS_LOSE;
+				iterate((nx, ny, board) -> board[nx][ny].state = STATE_PRESSED);
+				board[x][y].state = STATE_DEAD;
+			} else {
+				status = STATUS_WIN;
 				iterate((nx, ny, board) -> {
-					if (board[nx][ny].mines == MINE)
-						board[nx][ny].state = STATE_WIN;
+					if (board[nx][ny].state == STATE_UNPRESSED && board[nx][ny].mines != MINE)
+						status = STATUS_PLAYING;
 				});
+				if (status == STATUS_WIN) {
+					iterate((nx, ny, board) -> {
+						if (board[nx][ny].mines == MINE)
+							board[nx][ny].state = STATE_WIN;
+					});
+				}
 			}
 		}
 	}
@@ -556,7 +558,7 @@ public class Board {
 		return field;
 	}
 
-	private void set() {
+	public void set() {
 		boolean[][] mines = generator.getCompletedField();
 		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
 		determineNeighbors();
@@ -564,6 +566,8 @@ public class Board {
 		int[][] mineBoard = new int[width()][height()];
 		iterate((i, j, board) -> mineBoard[i][j] = board[i][j].mines);
 		calculateSeed(width(), height(), generator.getFirstPress());
+		board[generator.getFirstPress() / height()][generator.getFirstPress() % height()].state = STATE_PRESSED;
+		press(generator.getFirstPress() / height(), generator.getFirstPress() % height());
 	}
 
 	private static void merge(ArrayList<MineLocation> occupied, int index) {

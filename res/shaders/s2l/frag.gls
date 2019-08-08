@@ -9,7 +9,7 @@ in vec2 texCoords;
 out vec4 color;
 
 void main() {
-    if (texCoords.y < percent)
+    if (atan(texCoords.x - 0.5, texCoords.y - 0.5) + 3.14 < 6.28 * percent)
         color = texture(background, texCoords);
     else
         color = texture(foreground, texCoords);

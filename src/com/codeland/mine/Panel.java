@@ -89,7 +89,7 @@ public class Panel {
 
 		generator = new SolvableBoardGenerator();
 		board = new Board(generator);
-		board.reset(30, 16, 170);
+		board.reset(50, 50, 885);
 
 		tileDim = Math.min(
 			camera.getWidth()  / (board.width()  + 2),
@@ -174,9 +174,16 @@ public class Panel {
 
 		if (generator.isPrepared()) {
 			loading = new Thread(generator);
-			loading.run();
+			loading.start();
 		}
 		if (generator.fieldIsCompleted()) {
+			if (board.getSeed() == null) {
+				if (generator.getCompletedField() != null) {
+					board.set();
+					board.release(-2, -2);
+					checkBoardPress(true, board::release);
+				}
+			}
 			if (status == STATUS_PLAYING) {
 				// If the left mouse button is pressed...
 				if (window.mousePressed(GLFW_MOUSE_BUTTON_1) >= Window.BUTTON_PRESSED)
@@ -194,7 +201,8 @@ public class Panel {
 
 			resetButton.update();
 			if (resetButton.getState() == BUTTON_STATE_RELEASED) {
-				board.reset(30, 16, 170);
+				generator.reset();
+				board.reset(50, 50, 885);
 				//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
 			}
 			equalHighlighting.update();
