@@ -81,6 +81,8 @@ public class Panel {
 
 	private int status;
 
+	private boolean shouldReformat = false;
+
 	public Panel(Window window, Camera camera) {
 		this.window = window;
 		this.camera = camera;
@@ -89,7 +91,7 @@ public class Panel {
 
 		generator = new SolvableBoardGenerator();
 		board = new Board(generator);
-		board.reset(50, 50, 885);
+		board.reset(30, 20, 130);
 
 		tileDim = Math.min(
 			camera.getWidth()  / (board.width()  + 2),
@@ -133,7 +135,8 @@ public class Panel {
 
 	public void update() {
 		// If the window was resized...
-		if (window.wasResized()) {
+		if (window.wasResized() || shouldReformat) {
+			shouldReformat = false;
 			// Reset the camera dimensions to match the window dimensions
 			camera.setDims(window.getWidth(), window.getHeight());
 
@@ -180,7 +183,7 @@ public class Panel {
 			if (board.getSeed() == null) {
 				if (generator.getCompletedField() != null) {
 					board.set();
-					board.release(-2, -2);
+					//board.release(-2, -2);
 					checkBoardPress(true, board::release);
 				}
 			}
@@ -202,7 +205,8 @@ public class Panel {
 			resetButton.update();
 			if (resetButton.getState() == BUTTON_STATE_RELEASED) {
 				generator.reset();
-				board.reset(50, 50, 885);
+				board.reset(30, 16, 170);
+				shouldReformat = true;
 				//board.reset("30x16:15#000000000100480002200000011080140040000000000080080000605008900001180818040401004008410800080002040801042410208000250240");
 			}
 			equalHighlighting.update();

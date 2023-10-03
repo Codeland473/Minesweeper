@@ -31,9 +31,14 @@ public class SolvableBoardGenerator implements Runnable {
 	public void run() {
 		prepared = false;
 		completed = false;
+		//field = BruteSolver.getSolvable(width(), height(), mineCount, startX, startY);
 		getNewMines();
 		updateRealBoard();
 		resetGuessBoard();
+
+		int numRepetitons = 0;
+		int previousRedistributableMines = mineCount;
+
 		while (true) {
 			progress = (float) getKnownCount() / (float) (width() * height());
 			attemptLinearProgress();
@@ -42,18 +47,48 @@ public class SolvableBoardGenerator implements Runnable {
 			}
 			if (!attemptDeepProgress()) {
 				//current layout is impossible, re-organize
-				redistribute();
-				updateRealBoard();
+				if (numRepetitons > 20 + previousRedistributableMines) {
+					/*getNewMines();
+					updateRealBoard();
+					resetGuessBoard();*/
+					doEdgeRedistribute();
+				} else {
+
+					int redistributedMines;
+					if (isBoxedOut()) {
+						redistributedMines = doEdgeRedistribute();
+					} else {
+						redistributedMines = doBasicRedistribute();
+					}
+					if (redistributedMines >= previousRedistributableMines) {
+						++numRepetitons;
+					} else {
+						previousRedistributableMines = redistributedMines;
+					}
+				}
+				updateRealBoard();//*//*
 				board[startX][startY] = realBoard[startX][startY];
-				/*getNewMines();
-				updateRealBoard();
-				resetGuessBoard();*/
+			} else {
+				numRepetitons = 0;
 			}
-		}
+		}//*/
 		completed = true;
 	}
 
 	private int redistributableMineCount() {
+		int ret = 0;
+		for (int i = 0; i < width(); ++i) {
+			for (int j = 0; j < height(); ++j) {
+				if (field[i][j] && board[i][j] == -1) {
+					field[i][j] = false;
+					++ret;
+				}
+			}
+		}
+		return ret;
+	}
+
+	private int redistributableMineCountEdge() {
 		int ret = 0;
 		for (int i = 0; i < width(); ++i) {
 			for (int j = 0; j < height(); ++j) {
@@ -88,7 +123,7 @@ public class SolvableBoardGenerator implements Runnable {
 		return ret;
 	}
 
-	private void doBasicRedistribute(int minesToRedistribute) {
+	private void redistribute(int minesToRedistribute) {
 		for (int i = 0; i < minesToRedistribute; ++i) {
 			int x = (int) (Math.random() * width());
 			int y = (int) (Math.random() * height());
@@ -109,8 +144,16 @@ public class SolvableBoardGenerator implements Runnable {
 		}
 	}
 
-	private void redistribute() {
-		doBasicRedistribute(redistributableMineCount());
+	private int doBasicRedistribute() {
+		int redistributableMineCount = redistributableMineCount();
+		redistribute(redistributableMineCount);
+		return redistributableMineCount;
+	}
+
+	private int doEdgeRedistribute() {
+		int numToRedistribute = redistributableMineCountEdge();
+		redistribute(numToRedistribute);
+		return numToRedistribute;
 	}
 
 	private boolean attemptLinearProgress() {
@@ -475,6 +518,19 @@ public class SolvableBoardGenerator implements Runnable {
 			}
 		}
 		return ret;
+	}
+
+	private boolean isBoxedOut() {
+		for (int i = 0; i < board.length; ++i) {
+			for (int j = 0; j < board[0].length; ++j) {
+				if (board[i][j] >= 0 && board[i][j] < 9) {
+					if (boardersUnknown(i, j)) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 
 

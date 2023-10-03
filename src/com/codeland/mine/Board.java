@@ -559,7 +559,7 @@ public class Board {
 	}
 
 	public void set() {
-		boolean[][] mines = generator.getCompletedField();
+		boolean[][] mines = /*BruteSolver.getSolvable(width(), height(), mineCount, generator.getFirstPress() / height(), generator.getFirstPress() % height());//*/generator.getCompletedField();
 		iterate((i, j, board) -> board[i][j].mines = mines[i][j] ? MINE : 0);
 		determineNeighbors();
 
